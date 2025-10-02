@@ -13,50 +13,50 @@ We will use a chessboard pattern to register the screen positions on the camera.
 """
 
 import cv2
-import numpy as np
 
-from env import BACKGROUND_SCREEN
 from graphics.patterns import show_chessboard_pattern
-from helpers import get_background_axes, get_display_axes
+from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend
+from matplotlib import pyplot as plt
+from camera import take_picture
 
-if __name__ == "__main__":
-    from matplotlib import pyplot as plt
-    from camera import get_camera, take_picture, get_or_create_camera
-
-    size = 500
-    from matplotlib import use
-
-    use('qtagg')
+set_matplotlib_backend()
 
 
-    CAP = get_or_create_camera(0)
+def _find_corners(gray, pattern_size):
+    glag_sets = [
+        cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE + cv2.CALIB_CB_FILTER_QUADS,
+        cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE
+    ]
+    for flags in glag_sets:
+        ret, corners = cv2.findChessboardCorners(gray, pattern_size, flags)
+        if ret:
+            return ret, corners
+    return False, None
 
-    # set a figure on the entire screen:
+
+def register_screen_camera(size = 100):
+
+    camera = get_overhead_camera()
     ax_bg = get_background_axes()
-    chessboard = show_chessboard_pattern(ax_bg, square_size=size)
 
+    chessboard, n_squares = show_chessboard_pattern(ax_bg, square_size=size)
+    pattern_size = n_squares - 1  # number of inner corners
     plt.pause(1)  # give some time to display the pattern
 
-    frame = take_picture(cap=CAP)
-    plt.figure()
+    frame = take_picture(cap=camera)
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    plt.imshow(gray, cmap='gray')
-    # plt.show()
+    ret, corners = _find_corners(gray, pattern_size=pattern_size)
 
-    # Find the chess board corners
-    pattern_size = (chessboard.shape[1]//size - 1, chessboard.shape[0]//size - 1)  # number of inner corners per a chessboard row and column
-    ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
-
+    fig, ax = plt.subplots()
+    ax.imshow(gray, cmap='gray')
     if ret:
-        # If found, draw corners
         cv2.drawChessboardCorners(frame, pattern_size, corners, ret)
-        plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        plt.title("Detected Chessboard Corners")
-        plt.show()
-
-        # Save the corner positions for further processing
-        np.save("chessboard_corners.npy", corners)
-        print("Chessboard corners saved to chessboard_corners.npy")
+        plt.title("Chessboard Corners Detected")
     else:
-        print("Chessboard not detected. Please adjust the camera or pattern and try again.")
+        plt.title("Chessboard Corners NOT Detected")
+
+
+if __name__ == "__main__":
+    register_screen_camera(size=100)
+    plt.show()
