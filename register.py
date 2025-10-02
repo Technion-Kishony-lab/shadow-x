@@ -16,9 +16,10 @@ from difflib import diff_bytes
 import cv2
 import numpy as np
 
+from graphics.helpers import subtract_images
 from graphics.patterns import get_array_of_circles_image
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
-    get_background_image, set_background_image, illuminate
+    get_background_image, set_background_image, illuminate, get_background_image_size
 from matplotlib import pyplot as plt
 
 set_matplotlib_backend()
@@ -82,22 +83,16 @@ def register_screen_camera(num_tile_rows=10, display=True):
     camera = get_overhead_camera()
     ax_bg = get_background_axes()
 
-    image_with_circles, xs, ys = get_array_of_circles_image(get_background_image().get_array().shape[:2],
-                                                            num_rows=num_tile_rows)
+    image_with_circles, xs, ys = get_array_of_circles_image(size=get_background_image_size(), num_rows=num_tile_rows)
 
     mapping = None
     while True:
-        illuminate(color=(0, 0, 0), pause=1)
+        illuminate(color=(0, 0, 0), pause=0.1)
         image0 = camera.take_picture()
-        set_background_image(image_with_circles)
-        plt.pause(1)  # give some time to display the pattern
+        set_background_image(image_with_circles, pause=0.1)
         image1 = camera.take_picture()
 
-        gray0 = cv2.cvtColor(image0, cv2.COLOR_BGR2GRAY)
-        gray1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
-
-        diff_image = gray1.astype(np.int32) - gray0.astype(np.int32)
-        diff_image = (255 - np.clip(diff_image, 0, 255)).astype(np.uint8)
+        diff_image = 255 - subtract_images(image1, image0, as_gray=True, as_uint8=True)
         # save:
         cv2.imwrite("diff_image.png", diff_image)
         ret, centers = cv2.findCirclesGrid(diff_image, (len(ys), len(xs)), cv2.CALIB_CB_SYMMETRIC_GRID)

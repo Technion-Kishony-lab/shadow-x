@@ -48,6 +48,11 @@ def get_background_image() -> AxesImage:
     return get_axes_image(ax, bin_size=BACKGROUND_SCREEN_BIN_SIZE)
 
 
+def get_background_image_size() -> tuple[int, int]:
+    img = get_background_image()
+    return img.get_array().shape[:2]
+
+
 def get_camera_display_image() -> AxesImage:
     ax = get_camera_display_axes()
     return get_axes_image(ax)
@@ -60,9 +65,11 @@ def set_axes_image(ax, image: np.ndarray):
     ax.figure.canvas.flush_events()
 
 
-def set_background_image(image: np.ndarray):
+def set_background_image(image: np.ndarray, pause=0):
     ax = get_background_axes()
     set_axes_image(ax, image)
+    if pause:
+        plt.pause(pause)
 
 
 def set_camera_display_image(image: np.ndarray):
