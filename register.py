@@ -1,24 +1,12 @@
-"""
-Register screen positions on the camera.
-
-Our setup:
-Screen lays flat on the table.
-Camera is placed above the screen.
-Both screen and camera are fixed.
-
-We need a mapping from screen coordinates to camera coordinates.
-
-We will use a chessboard pattern to register the screen positions on the camera.
-
-"""
 import cv2
 import numpy as np
+
+from matplotlib import pyplot as plt
 
 from graphics.helpers import subtract_images
 from graphics.patterns import get_array_of_circles_image
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
-    set_background_image, illuminate, get_background_image_size
-from matplotlib import pyplot as plt
+    set_background_image, illuminate, get_background_image_size, set_camera_display_image
 
 set_matplotlib_backend()
 
@@ -68,31 +56,31 @@ def wait_for_keypress(fig, options=('y', 'n')) -> str:
 
 def register_screen_camera(num_tile_rows=10, display=True):
     """
-    Register the screen positions on the camera using a chessboard pattern.
+    Register the screen positions on the camera using a circles grid pattern.
     Parameters
     ----------
-    size : int
-        Size of each square in the chessboard pattern in pixels.
+    num_tile_rows : int
+        Number of tile rows in the pattern.
+        The number of columns is determined by the aspect ratio of the background image.
     display : bool or None
         If True, display the mapping and ask the user to verify it.
         If False, do not display the mapping, unless fail to detect the pattern.
     """
 
     camera = get_overhead_camera()
-    ax_bg = get_background_axes()
+    ax_bgd = get_background_axes()
 
     image_with_circles, xs, ys = get_array_of_circles_image(size=get_background_image_size(), num_rows=num_tile_rows)
 
     mapping = None
     while True:
-        illuminate(color=(0, 0, 0), pause=0.1)
+        illuminate(color=(0, 0, 0), pause=0.5)
         image0 = camera.take_picture()
-        set_background_image(image_with_circles, pause=0.1)
+        set_background_image(image_with_circles, pause=0.5)
         image1 = camera.take_picture()
 
         diff_image = 255 - subtract_images(image1, image0, as_gray=True, as_uint8=True)
-        # save:
-        cv2.imwrite("diff_image.png", diff_image)
+
         ret, centers = cv2.findCirclesGrid(diff_image, (len(ys), len(xs)), cv2.CALIB_CB_SYMMETRIC_GRID)
 
         if ret:
@@ -101,26 +89,28 @@ def register_screen_camera(num_tile_rows=10, display=True):
                 break
 
         disp_ax = get_camera_display_axes()
-        disp_ax.imshow(diff_image, cmap='gray')
+        # disp_ax.imshow(diff_image, cmap='gray')
+        print('diff image shape:', diff_image.shape)
+        set_camera_display_image(diff_image)
         if not ret:
             disp_ax.set_title("Pattern NOT detected. Press 'y' to break, or adjust setup and press 'n' to try again.")
         else:
-            # map the chessboard corners to the ax_bg coordinates:
+            # plot the detected circles on the camera image:
             disp_ax.plot(centers[:, 0, 0], centers[:, 0, 1], 'rx', markersize=7)
             disp_ax.set_title("Pattern detected. Press 'y' to confirm, or adjust setup and press 'n' to try again.")
 
+            # map the detected circles to screen coordinates:
             screen_points = _map_from_camera_points_to_screen_points(mapping=mapping,
                                                                      camera_points=centers)
 
             # plot the mapped points on the screen chessboard:
-            ax_bg.plot(screen_points[:, 0], screen_points[:, 1], 'rx', markersize=7)
-            ax_bg.figure.canvas.draw()
-            ax_bg.figure.canvas.flush_events()
+            ax_bgd.plot(screen_points[:, 0], screen_points[:, 1], 'rx', markersize=7)
+            ax_bgd.figure.canvas.draw()
             disp_ax.figure.canvas.draw()
-            disp_ax.figure.canvas.flush_events()
+
         key = wait_for_keypress(disp_ax.figure)
         if key == 'y':
-            ax_bg.cla()
+            ax_bgd.cla()
             disp_ax.cla()
             break
 

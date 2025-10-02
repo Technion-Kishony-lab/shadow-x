@@ -8,7 +8,7 @@ from env import BACKGROUND_SCREEN, DISPLAY_SCREEN, OVERHEAD_CAMERA, BACKEND, BAC
 from camera import get_or_create_camera, Camera
 
 from graphics.figures import get_or_create_named_figure
-from graphics.patterns import get_size_in_pixels
+from graphics.helpers import get_axes_size_in_pixels
 
 
 def set_matplotlib_backend():
@@ -34,35 +34,21 @@ def get_camera_display_axes(index=0) -> Axes:
     return ax
 
 
-def get_axes_image(ax: Axes, bin_size=1):
-    if not ax.images:
-        ax_size = get_size_in_pixels(ax)
-        if bin_size > 1:
-            ax_size = ax_size // bin_size
-        ax.imshow(255 * np.ones(ax_size, dtype=np.uint8), cmap='gray', vmin=0, vmax=255)
-    return ax.images[0]
-
-
-def get_background_image() -> AxesImage:
+def get_background_image_size():
     ax = get_background_axes()
-    return get_axes_image(ax, bin_size=BACKGROUND_SCREEN_BIN_SIZE)
-
-
-def get_background_image_size() -> tuple[int, int]:
-    img = get_background_image()
-    return img.get_array().shape[:2]
-
-
-def get_camera_display_image(index=0) -> AxesImage:
-    ax = get_camera_display_axes(index)
-    return get_axes_image(ax)
+    ax_size = get_axes_size_in_pixels(ax)
+    image_size = ax_size // BACKGROUND_SCREEN_BIN_SIZE
+    return image_size
 
 
 def set_axes_image(ax, image: np.ndarray):
-    img = get_axes_image(ax)
-    img.set_array(image)
+    if ax.images:
+        img = ax.images[0]
+        assert np.all(img.get_array().shape[:2] == image.shape[:2])
+        img.set_array(image)
+    else:
+        ax.imshow(image, cmap='gray', vmin=0, vmax=255)
     ax.figure.canvas.draw()
-    # ax.figure.canvas.flush_events()
 
 
 def set_background_image(image: np.ndarray, pause=0):
@@ -78,10 +64,8 @@ def set_camera_display_image(image: np.ndarray, index=0):
 
 
 def illuminate(color=(255, 255, 255), pause=1):
-    img = get_background_image()
-    size = img.get_array().shape[:2]
-    img.set_array(np.full((*size, 3), color, dtype=np.uint8))
-    img.axes.figure.canvas.draw()
-    img.axes.figure.canvas.flush_events()
-    if pause:
-        plt.pause(pause)
+    size = get_background_image_size()
+    background_image = np.zeros((size[0], size[1], 3), dtype=np.uint8)
+    background_image[:, :] = color
+    set_background_image(background_image, pause=pause)
+

@@ -1,8 +1,8 @@
-from dataclasses import dataclass
-from typing import Optional
-
 import cv2
 import time
+
+from dataclasses import dataclass
+from typing import Optional
 from datetime import datetime
 
 
