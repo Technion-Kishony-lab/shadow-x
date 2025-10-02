@@ -16,7 +16,8 @@ def create_chessboard_binary_pattern(n_squares, square_size=10):
     return chessboard
 
 
-def get_chessboard_image(size, square_size=10, black=0, white=255, margin_color=0):
+def get_chessboard_image(size, num_tile_rows=10, black=0, white=255, margin_color=0):
+    square_size = size[0] // num_tile_rows
     n_squares = np.array(size) // square_size
     chessboard_binary = create_chessboard_binary_pattern(n_squares, square_size)
     chessboard = (chessboard_binary * (white - black) + black).astype(np.uint8)
@@ -26,5 +27,5 @@ def get_chessboard_image(size, square_size=10, black=0, white=255, margin_color=
         chessboard_with_margin[:chessboard.shape[0], :chessboard.shape[1]] = chessboard
         chessboard = chessboard_with_margin
 
-    return chessboard, n_squares
+    return chessboard, n_squares, square_size
 

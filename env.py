@@ -1,7 +1,7 @@
 import cv2
 
 BACKGROUND_SCREEN = 1
-BACKGROUND_SCREEN_BIN_SIZE = 8  # binning factor for the background screen
+BACKGROUND_SCREEN_BIN_SIZE = 1  # binning factor for the background screen
 
 DISPLAY_SCREEN = 2
 

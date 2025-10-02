@@ -39,8 +39,15 @@ def _find_chessboard_vertices(gray, pattern_size):
         ("blurred", cv2.GaussianBlur(gray, (5, 5), 0)),
         ("equalized", cv2.equalizeHist(gray)),
         ("blurred+equalized", cv2.equalizeHist(cv2.GaussianBlur(gray, (5, 5), 0))),
-        ("binary", cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2))
+        ("binary", cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)),
+        ("thresholded", cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)[1])
     ]
+    # plot all the preprocessed images for debugging:
+    fig, axes = plt.subplots(1, len(preprocessed_images), figsize=(15, 5))
+    for ax, (name, img) in zip(axes, preprocessed_images):
+        ax.imshow(img, cmap='gray')
+        ax.set_title(name)
+        ax.axis('off')
 
     for preproc_name, img in preprocessed_images:
         for flags in flag_sets:
@@ -52,12 +59,12 @@ def _find_chessboard_vertices(gray, pattern_size):
     return None, None
 
 
-def _get_mapping(size, n_squares, detected_vertices):
+def _get_mapping(tile_size, n_squares, detected_vertices):
     screen_vertices = np.array([
         [i, j]
         for j in range(1, n_squares[1])
         for i in range(1, n_squares[0])
-    ], dtype=np.float32) * size
+    ], dtype=np.float32) * tile_size
 
     camera_vertices = detected_vertices.reshape(-1, 2).astype(np.float32)
 
@@ -93,7 +100,7 @@ def wait_for_keypress(fig, options=('y', 'n')) -> str:
     return key_pressed
 
 
-def register_screen_camera(size=100, display=True):
+def register_screen_camera(num_tile_rows=10, display=True):
     """
     Register the screen positions on the camera using a chessboard pattern.
     Parameters
@@ -108,7 +115,8 @@ def register_screen_camera(size=100, display=True):
     camera = get_overhead_camera()
     ax_bg = get_background_axes()
 
-    chessboard, n_squares = get_chessboard_image(get_background_image().get_array().shape[:2], square_size=size, margin_color=127)
+    chessboard, n_squares, tile_size = get_chessboard_image(get_background_image().get_array().shape[:2],
+                                                 num_tile_rows=num_tile_rows, margin_color=127)
     set_background_image(chessboard)
 
     pattern_size = n_squares - 1  # number of inner corners
@@ -117,15 +125,15 @@ def register_screen_camera(size=100, display=True):
     mapping = None
     while True:
         frame = camera.take_picture()
+
+        # save for debugging
+        cv2.imwrite("debug_camera_image.png", frame)
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         ret, vertices = _find_chessboard_vertices(gray, pattern_size=pattern_size)
 
         if ret:
-            mapping = _get_mapping(
-                size=size,
-                n_squares=n_squares,
-                detected_vertices=vertices
-            )
+            mapping = _get_mapping(tile_size=tile_size, n_squares=n_squares, detected_vertices=vertices)
             if display is False:
                 break
 
@@ -158,4 +166,4 @@ def register_screen_camera(size=100, display=True):
 
 
 if __name__ == "__main__":
-    register_screen_camera(size=270)
+    register_screen_camera(num_tile_rows=8)
