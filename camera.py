@@ -45,6 +45,12 @@ class Camera:
             frame = cv2.rotate(frame, self.rotate)
         return frame
 
+    def get_resolution(self):
+        cap = self.get_capture()
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        return height, width
+
     def take_picture_and_save(self, filename=None):
         frame = self.take_picture()
         if filename is None:
