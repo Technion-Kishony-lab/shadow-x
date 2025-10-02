@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 from matplotlib import pyplot as plt
 import timers
@@ -22,16 +20,15 @@ camera = get_overhead_camera()
 
 mapping = register_screen_camera(12, display=True)
 
-
 illuminate(color=BACKGROUND_COLOR, pause=1)
 image0 = camera.take_picture()
-background_image_size = get_background_image_size()
+bgd_image_size = get_background_image_size()
 
 
 def detect_obstractions(bgd_img, frame):
     normalized_image = frame.astype(np.float32) / (bgd_img.astype(np.float32) + 1)
-    is_red = normalized_image[:,:,0] > 1.1 * normalized_image[:,:,2]
-    detected_mask = np.abs(subtract_images(bgd_img[:,:,2:], frame[:,:,2:], as_gray=True)) > 70
+    is_red = normalized_image[:, :, 0] > 1.1 * normalized_image[:, :, 2]
+    detected_mask = np.abs(subtract_images(bgd_img[:, :, 2:], frame[:, :, 2:], as_gray=True)) > 70
 
     return detected_mask & ~is_red
 
@@ -48,7 +45,7 @@ for i in range(5000):
         with timers.timeit("detect_obstractions"):
             detected_mask = detect_obstractions(image0, image1)
             shadow_image_on_camera = np.zeros_like(image1)
-            shadow_image_on_camera[:,:] = BACKGROUND_COLOR
+            shadow_image_on_camera[:, :] = BACKGROUND_COLOR
             shadow_image_on_camera[detected_mask] = SHADOW_COLOR
 
         if SHOW_CAMERA_DISPLAY_SHADOW:
@@ -56,7 +53,7 @@ for i in range(5000):
                 set_camera_display_image(shadow_image_on_camera, index=1)
 
         with timers.timeit("map_camera_image_to_screen_image"):
-            screen_image = map_camera_image_to_screen_image(mapping, shadow_image_on_camera, background_image_size[::-1])
+            screen_image = map_camera_image_to_screen_image(mapping, shadow_image_on_camera, bgd_image_size[::-1])
 
         with timers.timeit("set_background_image"):
             set_background_image(screen_image)

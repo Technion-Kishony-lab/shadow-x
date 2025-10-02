@@ -5,8 +5,6 @@ import cv2
 import time
 from datetime import datetime
 
-from PIL.ImageColor import colormap
-
 
 @dataclass
 class Camera:

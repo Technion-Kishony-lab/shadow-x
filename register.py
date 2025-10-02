@@ -103,11 +103,11 @@ def register_screen_camera(num_tile_rows=10, display=True):
         disp_ax = get_camera_display_axes()
         disp_ax.imshow(diff_image, cmap='gray')
         if not ret:
-            disp_ax.set_title("Chessboard Corners NOT Detected. Press 'y' to break, or adjust setup and press 'n' to try again.")
+            disp_ax.set_title("Pattern NOT detected. Press 'y' to break, or adjust setup and press 'n' to try again.")
         else:
             # map the chessboard corners to the ax_bg coordinates:
             disp_ax.plot(centers[:, 0, 0], centers[:, 0, 1], 'rx', markersize=7)
-            disp_ax.set_title("Chessboard Corners Detected. Press 'y' to confirm, or adjust setup and press 'n' to try again.")
+            disp_ax.set_title("Pattern detected. Press 'y' to confirm, or adjust setup and press 'n' to try again.")
 
             screen_points = _map_from_camera_points_to_screen_points(mapping=mapping,
                                                                      camera_points=centers)
@@ -129,6 +129,3 @@ def register_screen_camera(num_tile_rows=10, display=True):
 
 if __name__ == "__main__":
     register_screen_camera(num_tile_rows=16)
-
-
-   # read the mapping from the file:

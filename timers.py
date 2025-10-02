@@ -33,4 +33,3 @@ def print_all_timers():
     for label, (total_time, count) in LAVELS_TO_TIMES_AND_COUNTS.items():
         print(f"{label:50} avg: {total_time / count * 1000:.1f} ms over {count} calls")
     LAVELS_TO_TIMES_AND_COUNTS.clear()
-

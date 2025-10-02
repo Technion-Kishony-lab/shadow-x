@@ -1,5 +1,4 @@
 import numpy as np
-from matplotlib import pyplot as plt
 
 
 def get_size_in_pixels(ax):
@@ -30,7 +29,8 @@ def get_chessboard_image(size, num_tile_rows=10, black=0, white=255, margin_colo
     return chessboard, n_squares, square_size
 
 
-def get_array_of_circles_image(size, num_rows, radius_frac=0.25, margin_frac=0.25, background_color=(0, 0, 0), circle_color=(255, 255, 255)):
+def get_array_of_circles_image(size, num_rows, radius_frac=0.25, margin_frac=0.25,
+                               background_color=(0, 0, 0), circle_color=(255, 255, 255)):
     d = size[0] / (num_rows - 1 + (margin_frac + radius_frac) * 2)
     radius = int(radius_frac * d)
     margin = int((margin_frac + radius_frac) * d)

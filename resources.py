@@ -85,4 +85,3 @@ def illuminate(color=(255, 255, 255), pause=1):
     img.axes.figure.canvas.flush_events()
     if pause:
         plt.pause(pause)
-

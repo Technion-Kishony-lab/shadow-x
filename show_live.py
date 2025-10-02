@@ -10,4 +10,3 @@ for i in range(50):
     frame = camera.take_picture()
     set_camera_display_image(frame)
     plt.pause(0.01)
-
