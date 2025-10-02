@@ -14,7 +14,6 @@ We will use a chessboard pattern to register the screen positions on the camera.
 
 import cv2
 import numpy as np
-from PIL.ImageChops import screen
 
 from graphics.patterns import show_chessboard_pattern
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend
@@ -25,14 +24,35 @@ set_matplotlib_backend()
 
 
 def _find_chessboard_vertices(gray, pattern_size):
-    glag_sets = [
+    # Try different flag combinations - removed FAST_CHECK as it's strict with distortion
+    flag_sets = [
+        cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE,
         cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE + cv2.CALIB_CB_FILTER_QUADS,
-        cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE
+        cv2.CALIB_CB_ADAPTIVE_THRESH,
+        cv2.CALIB_CB_NORMALIZE_IMAGE,
+        0  # No flags
     ]
-    for flags in glag_sets:
-        ret, vertices = cv2.findChessboardCorners(gray, pattern_size, flags)
-        if ret:
-            return ret, vertices
+    
+    # Try different preprocessing approaches
+    preprocessed_images = [
+        ("original", gray),
+        ("blurred", cv2.GaussianBlur(gray, (5, 5), 0)),
+        ("equalized", cv2.equalizeHist(gray)),
+        ("blurred+equalized", cv2.equalizeHist(cv2.GaussianBlur(gray, (5, 5), 0))),
+        ("binary", cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2))
+    ]
+
+    for preproc_name, img in preprocessed_images:
+        for flags in flag_sets:
+            ret, vertices = cv2.findChessboardCorners(img, pattern_size, flags)
+            if ret:
+                # # Refine corners for better accuracy
+                # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+                # cv2.cornerSubPix(img, vertices, (11, 11), (-1, -1), criteria)
+                # print(f"✓ Detected with: {preproc_name}, flags={flags}")
+                return ret, vertices
+    
+    print("✗ Detection failed with all approaches")
     return None, None
 
 
@@ -72,6 +92,7 @@ def register_screen_camera(size = 100):
 
     chessboard, n_squares = show_chessboard_pattern(ax_bg, square_size=size)
     pattern_size = n_squares - 1  # number of inner corners
+    print(f"pattern_size: {pattern_size}")
     plt.pause(1)  # give some time to display the pattern
 
     frame = take_picture(cap=camera)
@@ -81,7 +102,7 @@ def register_screen_camera(size = 100):
 
     fig, ax = plt.subplots()
     if vertices is None:
-        ax.imshow(frame, cmap='gray')
+        ax.imshow(gray, cmap='gray')
         plt.title("Chessboard Corners NOT Detected")
     else:
         cv2.drawChessboardCorners(frame, pattern_size, vertices, ret)
@@ -104,5 +125,5 @@ def register_screen_camera(size = 100):
 
 
 if __name__ == "__main__":
-    register_screen_camera(size=100)
+    register_screen_camera(size=200)
     plt.show()
