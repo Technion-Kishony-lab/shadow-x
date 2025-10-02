@@ -20,7 +20,7 @@ def get_overhead_camera() -> Camera:
 
 
 def get_background_axes() -> Axes:
-    fig, ax = get_or_create_named_figure("background", screen=BACKGROUND_SCREEN, is_image=True)
+    fig, ax = get_or_create_named_figure("background", screen=BACKGROUND_SCREEN, is_image=True, remove_toolbar=True)
     return ax
 
 

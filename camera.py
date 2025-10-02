@@ -5,6 +5,8 @@ import cv2
 import time
 from datetime import datetime
 
+from PIL.ImageColor import colormap
+
 
 @dataclass
 class Camera:
@@ -12,11 +14,12 @@ class Camera:
     fps: int
     buffer_size: int
     rotate: int = None
+    color_order: Optional[str] = None
     cap: Optional[cv2.VideoCapture] = None
 
     @classmethod
-    def create(cls, index=0, fps=30, buffer_size=1, rotate=None):
-        self = cls(index=index, fps=fps, buffer_size=buffer_size, rotate=rotate)
+    def create(cls, index=0, fps=30, buffer_size=1, rotate=None, color_order=None):
+        self = cls(index=index, fps=fps, buffer_size=buffer_size, rotate=rotate, color_order=color_order)
         self.get_capture()  # Initialize the capture
         return self
 
@@ -43,6 +46,9 @@ class Camera:
             raise Exception("Error: Could not read frame from camera")
         if self.rotate:
             frame = cv2.rotate(frame, self.rotate)
+        if self.color_order in ('RGB', 'BGR'):
+            if self.color_order == 'BGR':
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         return frame
 
     def get_resolution(self):
@@ -68,13 +74,14 @@ class Camera:
 INDEX_TO_CAMERAS: dict[int, Camera] = {}
 
 
-def get_or_create_camera(camera_index=0, fps=30, buffer_size=1, rotate=0) -> Camera:
+def get_or_create_camera(camera_index=0, fps=30, buffer_size=1, rotate=0, color_order=None) -> Camera:
     if camera_index not in INDEX_TO_CAMERAS:
         INDEX_TO_CAMERAS[camera_index] = Camera.create(
             index=camera_index,
             fps=fps,
             buffer_size=buffer_size,
-            rotate=rotate
+            rotate=rotate,
+            color_order=color_order,
         )
 
     return INDEX_TO_CAMERAS[camera_index]

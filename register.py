@@ -11,62 +11,28 @@ We need a mapping from screen coordinates to camera coordinates.
 We will use a chessboard pattern to register the screen positions on the camera.
 
 """
+from difflib import diff_bytes
 
 import cv2
 import numpy as np
 
-from graphics.patterns import get_chessboard_image, get_size_in_pixels
+from graphics.patterns import get_array_of_circles_image
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
-    get_background_image, set_background_image
+    get_background_image, set_background_image, illuminate
 from matplotlib import pyplot as plt
 
 set_matplotlib_backend()
 
 
-def _find_chessboard_vertices(gray, pattern_size):
-    # Try different flag combinations - removed FAST_CHECK as it's strict with distortion
-    flag_sets = [
-        cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE,
-        cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE + cv2.CALIB_CB_FILTER_QUADS,
-        cv2.CALIB_CB_ADAPTIVE_THRESH,
-        cv2.CALIB_CB_NORMALIZE_IMAGE,
-        0  # No flags
-    ]
-    
-    # Try different preprocessing approaches
-    preprocessed_images = [
-        ("original", gray),
-        ("blurred", cv2.GaussianBlur(gray, (5, 5), 0)),
-        ("equalized", cv2.equalizeHist(gray)),
-        ("blurred+equalized", cv2.equalizeHist(cv2.GaussianBlur(gray, (5, 5), 0))),
-        ("binary", cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)),
-        ("thresholded", cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)[1])
-    ]
-    # plot all the preprocessed images for debugging:
-    fig, axes = plt.subplots(1, len(preprocessed_images), figsize=(15, 5))
-    for ax, (name, img) in zip(axes, preprocessed_images):
-        ax.imshow(img, cmap='gray')
-        ax.set_title(name)
-        ax.axis('off')
-
-    for preproc_name, img in preprocessed_images:
-        for flags in flag_sets:
-            ret, vertices = cv2.findChessboardCorners(img, pattern_size, flags)
-            if ret:
-                return ret, vertices
-    
-    print("✗ Detection failed with all approaches")
-    return None, None
-
-
-def _get_mapping(tile_size, n_squares, detected_vertices):
-    screen_vertices = np.array([
-        [i, j]
-        for j in range(1, n_squares[1])
-        for i in range(1, n_squares[0])
-    ], dtype=np.float32) * tile_size
-
-    camera_vertices = detected_vertices.reshape(-1, 2).astype(np.float32)
+def _get_mapping(xs, ys, detected_circles):
+    screen_vertices = np.array(
+        [
+            [x, y]
+            for x in xs
+            for y in ys
+        ]
+    )
+    camera_vertices = detected_circles.astype(np.float32)
 
     H, mask = cv2.findHomography(camera_vertices, screen_vertices, cv2.RANSAC)
     if H is None:
@@ -75,6 +41,7 @@ def _get_mapping(tile_size, n_squares, detected_vertices):
 
 
 def _map_from_camera_points_to_screen_points(mapping, camera_points):
+    camera_points = camera_points.reshape(-1, camera_points.shape[-1])
     camera_points_homogeneous = np.hstack([camera_points, np.ones((camera_points.shape[0], 1))])
     screen_points_homogeneous = camera_points_homogeneous @ mapping.T
     screen_points = screen_points_homogeneous[:, :2] / screen_points_homogeneous[:, 2:3]
@@ -115,43 +82,45 @@ def register_screen_camera(num_tile_rows=10, display=True):
     camera = get_overhead_camera()
     ax_bg = get_background_axes()
 
-    chessboard, n_squares, tile_size = get_chessboard_image(get_background_image().get_array().shape[:2],
-                                                 num_tile_rows=num_tile_rows, margin_color=127)
-    set_background_image(chessboard)
-
-    pattern_size = n_squares - 1  # number of inner corners
-    plt.pause(1)  # give some time to display the pattern
+    image_with_circles, xs, ys = get_array_of_circles_image(get_background_image().get_array().shape[:2],
+                                                            num_rows=num_tile_rows)
 
     mapping = None
     while True:
-        frame = camera.take_picture()
+        illuminate(color=(0, 0, 0), pause=1)
+        image0 = camera.take_picture()
+        set_background_image(image_with_circles)
+        plt.pause(1)  # give some time to display the pattern
+        image1 = camera.take_picture()
 
-        # save for debugging
-        cv2.imwrite("debug_camera_image.png", frame)
+        gray0 = cv2.cvtColor(image0, cv2.COLOR_BGR2GRAY)
+        gray1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        ret, vertices = _find_chessboard_vertices(gray, pattern_size=pattern_size)
+        diff_image = gray1.astype(np.int32) - gray0.astype(np.int32)
+        diff_image = (255 - np.clip(diff_image, 0, 255)).astype(np.uint8)
+        # save:
+        cv2.imwrite("diff_image.png", diff_image)
+        ret, centers = cv2.findCirclesGrid(diff_image, (len(ys), len(xs)), cv2.CALIB_CB_SYMMETRIC_GRID)
 
         if ret:
-            mapping = _get_mapping(tile_size=tile_size, n_squares=n_squares, detected_vertices=vertices)
+            mapping = _get_mapping(xs, ys, centers)
             if display is False:
                 break
 
         disp_ax = get_camera_display_axes()
+        disp_ax.imshow(diff_image, cmap='gray')
         if not ret:
-            disp_ax.imshow(gray, cmap='gray')
             disp_ax.set_title("Chessboard Corners NOT Detected. Press 'y' to break, or adjust setup and press 'n' to try again.")
         else:
             # map the chessboard corners to the ax_bg coordinates:
-            cv2.drawChessboardCorners(frame, pattern_size, vertices, ret)
-            disp_ax.imshow(frame, cmap='gray')
+            disp_ax.plot(centers[:, 0, 0], centers[:, 0, 1], 'rx', markersize=7)
             disp_ax.set_title("Chessboard Corners Detected. Press 'y' to confirm, or adjust setup and press 'n' to try again.")
 
             screen_points = _map_from_camera_points_to_screen_points(mapping=mapping,
-                                                                     camera_points=vertices.reshape(-1, 2))
+                                                                     camera_points=centers)
 
             # plot the mapped points on the screen chessboard:
-            ax_bg.plot(screen_points[:, 1], screen_points[:, 0], 'rx', markersize=7)
+            ax_bg.plot(screen_points[:, 0], screen_points[:, 1], 'rx', markersize=7)
             ax_bg.figure.canvas.draw()
             ax_bg.figure.canvas.flush_events()
             disp_ax.figure.canvas.draw()
@@ -166,4 +135,7 @@ def register_screen_camera(num_tile_rows=10, display=True):
 
 
 if __name__ == "__main__":
-    register_screen_camera(num_tile_rows=8)
+    register_screen_camera(num_tile_rows=16)
+
+
+   # read the mapping from the file:
