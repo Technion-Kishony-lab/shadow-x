@@ -1,6 +1,6 @@
 import matplotlib
-from env import BACKGROUND_SCREEN, DISPLAY_SCREEN, OVERHEAD_CAMERA_INDEX, BACKEND
-from camera import get_or_create_camera
+from env import BACKGROUND_SCREEN, DISPLAY_SCREEN, OVERHEAD_CAMERA, BACKEND
+from camera import get_or_create_camera, Camera
 
 from graphics.figures import get_or_create_fullscreen_figure
 
@@ -15,8 +15,8 @@ def get_display_axes():
     return ax
 
 
-def get_overhead_camera():
-    return get_or_create_camera(OVERHEAD_CAMERA_INDEX)
+def get_overhead_camera() -> Camera:
+    return get_or_create_camera(**OVERHEAD_CAMERA)
 
 
 def set_matplotlib_backend():

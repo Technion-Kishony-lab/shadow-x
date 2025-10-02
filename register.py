@@ -18,7 +18,6 @@ import numpy as np
 from graphics.patterns import show_chessboard_pattern
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend
 from matplotlib import pyplot as plt
-from camera import take_picture
 
 set_matplotlib_backend()
 
@@ -46,10 +45,6 @@ def _find_chessboard_vertices(gray, pattern_size):
         for flags in flag_sets:
             ret, vertices = cv2.findChessboardCorners(img, pattern_size, flags)
             if ret:
-                # # Refine corners for better accuracy
-                # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-                # cv2.cornerSubPix(img, vertices, (11, 11), (-1, -1), criteria)
-                # print(f"✓ Detected with: {preproc_name}, flags={flags}")
                 return ret, vertices
     
     print("✗ Detection failed with all approaches")
@@ -95,7 +90,7 @@ def register_screen_camera(size = 100):
     print(f"pattern_size: {pattern_size}")
     plt.pause(1)  # give some time to display the pattern
 
-    frame = take_picture(cap=camera)
+    frame = camera.take_picture()
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     ret, vertices = _find_chessboard_vertices(gray, pattern_size=pattern_size)
