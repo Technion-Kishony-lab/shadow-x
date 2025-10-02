@@ -15,8 +15,9 @@ We will use a chessboard pattern to register the screen positions on the camera.
 import cv2
 import numpy as np
 
-from graphics.patterns import show_chessboard_pattern
-from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_display_axes
+from graphics.patterns import get_chessboard_image, get_size_in_pixels
+from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
+    get_background_image, set_background_image
 from matplotlib import pyplot as plt
 
 set_matplotlib_backend()
@@ -66,11 +67,16 @@ def _get_mapping(size, n_squares, detected_vertices):
     return H
 
 
-def _map_from_camera_to_screen(mapping, camera_points):
+def _map_from_camera_points_to_screen_points(mapping, camera_points):
     camera_points_homogeneous = np.hstack([camera_points, np.ones((camera_points.shape[0], 1))])
     screen_points_homogeneous = camera_points_homogeneous @ mapping.T
     screen_points = screen_points_homogeneous[:, :2] / screen_points_homogeneous[:, 2:3]
     return screen_points
+
+
+def map_camera_image_to_screen_image(mapping, camera_image, output_size):
+    screen_image = cv2.warpPerspective(camera_image, mapping, output_size)
+    return screen_image
 
 
 def wait_for_keypress(fig, options=('y', 'n')) -> str:
@@ -102,7 +108,9 @@ def register_screen_camera(size=100, display=True):
     camera = get_overhead_camera()
     ax_bg = get_background_axes()
 
-    chessboard, n_squares = show_chessboard_pattern(ax_bg, square_size=size)
+    chessboard, n_squares = get_chessboard_image(get_background_image().get_array().shape[:2], square_size=size, margin_color=127)
+    set_background_image(chessboard)
+
     pattern_size = n_squares - 1  # number of inner corners
     plt.pause(1)  # give some time to display the pattern
 
@@ -121,17 +129,18 @@ def register_screen_camera(size=100, display=True):
             if display is False:
                 break
 
-        disp_ax = get_display_axes()
+        disp_ax = get_camera_display_axes()
         if not ret:
             disp_ax.imshow(gray, cmap='gray')
-            disp_ax.set_title("Chessboard Corners NOT Detected. Press 'y' to nreak, 'n' to adjust.")
+            disp_ax.set_title("Chessboard Corners NOT Detected. Press 'y' to break, or adjust setup and press 'n' to try again.")
         else:
             # map the chessboard corners to the ax_bg coordinates:
             cv2.drawChessboardCorners(frame, pattern_size, vertices, ret)
             disp_ax.imshow(frame, cmap='gray')
-            disp_ax.set_title("Chessboard Corners Detected. Press 'y' to confirm, 'n' to adjust.")
+            disp_ax.set_title("Chessboard Corners Detected. Press 'y' to confirm, or adjust setup and press 'n' to try again.")
 
-            screen_points = _map_from_camera_to_screen(mapping=mapping, camera_points=vertices.reshape(-1, 2))
+            screen_points = _map_from_camera_points_to_screen_points(mapping=mapping,
+                                                                     camera_points=vertices.reshape(-1, 2))
 
             # plot the mapped points on the screen chessboard:
             ax_bg.plot(screen_points[:, 1], screen_points[:, 0], 'rx', markersize=7)
@@ -141,9 +150,12 @@ def register_screen_camera(size=100, display=True):
             disp_ax.figure.canvas.flush_events()
         key = wait_for_keypress(disp_ax.figure)
         if key == 'y':
+            ax_bg.cla()
+            disp_ax.cla()
             break
+
     return mapping
 
 
 if __name__ == "__main__":
-    register_screen_camera(size=200)
+    register_screen_camera(size=270)

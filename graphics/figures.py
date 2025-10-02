@@ -34,7 +34,7 @@ def set_figure_position(fig, screen=0, position="full"):
 
             geometry = screens[screen].geometry()
             window = manager.window
-            if position == "full":
+            if isinstance(position, str) and position == "full":
                 window.setGeometry(geometry)
                 window.showFullScreen()
             elif position is None:
@@ -87,12 +87,13 @@ def set_figure_position(fig, screen=0, position="full"):
 
 def get_or_create_named_figure(name, screen=0, figure_position="full", axes_position="full", is_image=False):
     if name in NAMES_TO_FIGUES_AND_AXES:
-        return NAMES_TO_FIGUES_AND_AXES[screen]
+        return NAMES_TO_FIGUES_AND_AXES[name]
     fig = plt.figure()
     set_figure_position(fig, screen=screen, position=figure_position)
-    ax = fig.add_axes([0, 0, 1, 1] if axes_position == "full" else axes_position)
+    is_full = isinstance(axes_position, str) and axes_position == "full"
+    ax = fig.add_axes([0, 0, 1, 1] if is_full else axes_position)
     if is_image:
         ax.set_xticks([])
         ax.set_yticks([])
-    NAMES_TO_FIGUES_AND_AXES[screen] = (fig, ax)
+    NAMES_TO_FIGUES_AND_AXES[name] = (fig, ax)
     return fig, ax
