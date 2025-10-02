@@ -73,7 +73,21 @@ def _map_from_camera_to_screen(mapping, camera_points):
     return screen_points
 
 
-def register_screen_camera(size=100, display=None):
+def wait_for_keypress(fig, options=('y', 'n')) -> str:
+    key_pressed = None
+
+    def on_key_press(event):
+        nonlocal key_pressed
+        key_pressed = event.key.lower()
+
+    fig.canvas.mpl_connect('key_press_event', on_key_press)
+
+    while key_pressed not in options:
+        plt.pause(0.1)
+    return key_pressed
+
+
+def register_screen_camera(size=100, display=True):
     """
     Register the screen positions on the camera using a chessboard pattern.
     Parameters
@@ -92,6 +106,7 @@ def register_screen_camera(size=100, display=None):
     pattern_size = n_squares - 1  # number of inner corners
     plt.pause(1)  # give some time to display the pattern
 
+    mapping = None
     while True:
         frame = camera.take_picture()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -109,13 +124,12 @@ def register_screen_camera(size=100, display=None):
         disp_ax = get_display_axes()
         if not ret:
             disp_ax.imshow(gray, cmap='gray')
-            plt.title("Chessboard Corners NOT Detected")
-            input("Adjust the setup and press Enter to try again...")
+            disp_ax.set_title("Chessboard Corners NOT Detected. Press 'y' to nreak, 'n' to adjust.")
         else:
             # map the chessboard corners to the ax_bg coordinates:
             cv2.drawChessboardCorners(frame, pattern_size, vertices, ret)
             disp_ax.imshow(frame, cmap='gray')
-            plt.title("Chessboard Corners Detected")
+            disp_ax.set_title("Chessboard Corners Detected. Press 'y' to confirm, 'n' to adjust.")
 
             screen_points = _map_from_camera_to_screen(mapping=mapping, camera_points=vertices.reshape(-1, 2))
 
@@ -123,16 +137,13 @@ def register_screen_camera(size=100, display=None):
             ax_bg.plot(screen_points[:, 1], screen_points[:, 0], 'rx', markersize=7)
             ax_bg.figure.canvas.draw()
             ax_bg.figure.canvas.flush_events()
-            plt.pause(0.1)
-
-            # ask the use to verify the mapping:
-            user_input = input("Do you want to adjust the setup and try again? (y/n): ").strip().lower()
-            if user_input != 'y':
-                break
-
-        return mapping
+            disp_ax.figure.canvas.draw()
+            disp_ax.figure.canvas.flush_events()
+        key = wait_for_keypress(disp_ax.figure)
+        if key == 'y':
+            break
+    return mapping
 
 
 if __name__ == "__main__":
     register_screen_camera(size=200)
-    plt.show()
