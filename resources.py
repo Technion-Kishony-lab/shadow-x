@@ -24,12 +24,12 @@ def get_background_axes() -> Axes:
     return ax
 
 
-def get_camera_display_axes() -> Axes:
+def get_camera_display_axes(index=0) -> Axes:
     camera_resolution_pixels = get_overhead_camera().get_resolution()
     axes_position = np.array([0.1, 0.1, 0.8, 0.85])
-    figure_position = np.array([100, 100, camera_resolution_pixels[0] / axes_position[3],
+    figure_position = np.array([100 + index*100, 100, camera_resolution_pixels[0] / axes_position[3],
                                 camera_resolution_pixels[1] / axes_position[2]]).astype(int)
-    fig, ax = get_or_create_named_figure("display", screen=DISPLAY_SCREEN, figure_position=figure_position,
+    fig, ax = get_or_create_named_figure(f"display{index}", screen=DISPLAY_SCREEN, figure_position=figure_position,
                                          axes_position=axes_position, is_image=True)
     return ax
 
@@ -39,7 +39,7 @@ def get_axes_image(ax: Axes, bin_size=1):
         ax_size = get_size_in_pixels(ax)
         if bin_size > 1:
             ax_size = ax_size // bin_size
-        ax.imshow(255 * np.ones((ax_size[0], ax_size[1]), dtype=np.uint8), cmap='gray', vmin=0, vmax=255)
+        ax.imshow(255 * np.ones(ax_size, dtype=np.uint8), cmap='gray', vmin=0, vmax=255)
     return ax.images[0]
 
 
@@ -53,8 +53,8 @@ def get_background_image_size() -> tuple[int, int]:
     return img.get_array().shape[:2]
 
 
-def get_camera_display_image() -> AxesImage:
-    ax = get_camera_display_axes()
+def get_camera_display_image(index=0) -> AxesImage:
+    ax = get_camera_display_axes(index)
     return get_axes_image(ax)
 
 
@@ -62,7 +62,7 @@ def set_axes_image(ax, image: np.ndarray):
     img = get_axes_image(ax)
     img.set_array(image)
     ax.figure.canvas.draw()
-    ax.figure.canvas.flush_events()
+    # ax.figure.canvas.flush_events()
 
 
 def set_background_image(image: np.ndarray, pause=0):
@@ -72,8 +72,8 @@ def set_background_image(image: np.ndarray, pause=0):
         plt.pause(pause)
 
 
-def set_camera_display_image(image: np.ndarray):
-    ax = get_camera_display_axes()
+def set_camera_display_image(image: np.ndarray, index=0):
+    ax = get_camera_display_axes(index)
     set_axes_image(ax, image)
 
 

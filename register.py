@@ -11,15 +11,13 @@ We need a mapping from screen coordinates to camera coordinates.
 We will use a chessboard pattern to register the screen positions on the camera.
 
 """
-from difflib import diff_bytes
-
 import cv2
 import numpy as np
 
 from graphics.helpers import subtract_images
 from graphics.patterns import get_array_of_circles_image
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
-    get_background_image, set_background_image, illuminate, get_background_image_size
+    set_background_image, illuminate, get_background_image_size
 from matplotlib import pyplot as plt
 
 set_matplotlib_backend()
