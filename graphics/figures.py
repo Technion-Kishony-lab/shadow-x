@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-SCREENS_TO_FIGUES_AND_AXES = {}
+NAMES_TO_FIGUES_AND_AXES = {}
 
 
 def set_figure_position(fig, screen=0, position="full"):
@@ -37,6 +37,8 @@ def set_figure_position(fig, screen=0, position="full"):
             if position == "full":
                 window.setGeometry(geometry)
                 window.showFullScreen()
+            elif position is None:
+                window.show()
             else:
                 x, y, w, h = position
                 window.setGeometry(geometry.x() + x, geometry.y() + y, w, h)
@@ -83,13 +85,14 @@ def set_figure_position(fig, screen=0, position="full"):
     print(f"Fullscreen/positioning not implemented for backend: {backend}")
 
 
-def get_or_create_fullscreen_figure(screen=0):
-    if screen in SCREENS_TO_FIGUES_AND_AXES:
-        return SCREENS_TO_FIGUES_AND_AXES[screen]
+def get_or_create_named_figure(name, screen=0, figure_position="full", axes_position="full", is_image=False):
+    if name in NAMES_TO_FIGUES_AND_AXES:
+        return NAMES_TO_FIGUES_AND_AXES[screen]
     fig = plt.figure()
-    set_figure_position(fig, screen=screen, position="full")
-    ax = fig.add_axes([0, 0, 1, 1])
-    ax.set_xticks([])
-    ax.set_yticks([])
-    SCREENS_TO_FIGUES_AND_AXES[screen] = (fig, ax)
+    set_figure_position(fig, screen=screen, position=figure_position)
+    ax = fig.add_axes([0, 0, 1, 1] if axes_position == "full" else axes_position)
+    if is_image:
+        ax.set_xticks([])
+        ax.set_yticks([])
+    NAMES_TO_FIGUES_AND_AXES[screen] = (fig, ax)
     return fig, ax
