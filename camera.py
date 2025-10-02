@@ -3,12 +3,34 @@ import time
 from datetime import datetime
 
 
-def get_camera(camera_index=0):
+INDEX_TO_CAMERAS = {}
+
+
+def get_camera(camera_index=0, fps=30, buffer_size=1):
+    """
+    Get a camera object.
+    
+    Args:
+        camera_index (int): Index of the camera to use.
+        fps (int): Frames per second.
+        buffer_size (int): Buffer size.
+    """
     cap = cv2.VideoCapture(camera_index)
+    
+    cap.set(cv2.CAP_PROP_FPS, fps)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, buffer_size)
+    
     time.sleep(1)  # Give camera time to initialize
     if not cap.isOpened():
         raise Exception(f"Error: Could not open camera {camera_index}")
     return cap
+
+
+def get_or_create_camera(camera_index=0, fps=30, buffer_size=1):
+    if camera_index not in INDEX_TO_CAMERAS:
+        INDEX_TO_CAMERAS[camera_index] = get_camera(camera_index=camera_index, fps=fps, buffer_size=buffer_size)
+
+    return INDEX_TO_CAMERAS[camera_index]
 
 
 def take_picture(cap, exposure=None):
