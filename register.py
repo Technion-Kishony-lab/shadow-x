@@ -13,6 +13,8 @@ We will use a chessboard pattern to register the screen positions on the camera.
 """
 
 import cv2
+import numpy as np
+from PIL.ImageChops import screen
 
 from graphics.patterns import show_chessboard_pattern
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend
@@ -22,16 +24,45 @@ from camera import take_picture
 set_matplotlib_backend()
 
 
-def _find_corners(gray, pattern_size):
+def _find_chessboard_vertices(gray, pattern_size):
     glag_sets = [
         cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE + cv2.CALIB_CB_FILTER_QUADS,
         cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE
     ]
     for flags in glag_sets:
-        ret, corners = cv2.findChessboardCorners(gray, pattern_size, flags)
+        ret, vertices = cv2.findChessboardCorners(gray, pattern_size, flags)
         if ret:
-            return ret, corners
-    return False, None
+            return ret, vertices
+    return None, None
+
+
+def _map_from_camera_to_screen(size, n_squares, detected_vertices, camera_points):
+    """
+    Map points from camera coordinates to screen coordinates.
+
+    camera_points: array of shape (N, 2)
+    """
+    screen_vertices = np.array([
+        [i, j]
+        for j in range(1, n_squares[1])
+        for i in range(1, n_squares[0])
+    ], dtype=np.float32) * size
+
+    camera_vertices = detected_vertices.reshape(-1, 2).astype(np.float32)
+    assert camera_vertices.shape[0] == screen_vertices.shape[0]
+    assert camera_vertices.shape[1] == 2
+    assert camera_points.shape[1] == 2
+
+    # Find the homography matrix
+    H, mask = cv2.findHomography(camera_vertices, screen_vertices, cv2.RANSAC)
+    if H is None:
+        raise ValueError("Could not find homography matrix")
+
+    # Map the camera points to screen points
+    camera_points_homogeneous = np.hstack([camera_points, np.ones((camera_points.shape[0], 1))])
+    screen_points_homogeneous = camera_points_homogeneous @ H.T
+    screen_points = screen_points_homogeneous[:, :2] / screen_points_homogeneous[:, 2:3]
+    return screen_points
 
 
 def register_screen_camera(size = 100):
@@ -46,15 +77,30 @@ def register_screen_camera(size = 100):
     frame = take_picture(cap=camera)
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    ret, corners = _find_corners(gray, pattern_size=pattern_size)
+    ret, vertices = _find_chessboard_vertices(gray, pattern_size=pattern_size)
 
     fig, ax = plt.subplots()
-    ax.imshow(gray, cmap='gray')
-    if ret:
-        cv2.drawChessboardCorners(frame, pattern_size, corners, ret)
-        plt.title("Chessboard Corners Detected")
-    else:
+    if vertices is None:
+        ax.imshow(frame, cmap='gray')
         plt.title("Chessboard Corners NOT Detected")
+    else:
+        cv2.drawChessboardCorners(frame, pattern_size, vertices, ret)
+        ax.imshow(frame, cmap='gray')
+        plt.title("Chessboard Corners Detected")
+
+        # map the chessboard corners to the ax_bg coordinates:
+        screen_points = _map_from_camera_to_screen(
+            size=size,
+            n_squares=n_squares,
+            detected_vertices=vertices,
+            camera_points=vertices.reshape(-1, 2)
+        )
+
+        # plot the mapped points on the screen chessboard:
+        ax_bg.plot(screen_points[:, 1], screen_points[:, 0], 'rx', markersize=7)
+        ax_bg.figure.canvas.draw()
+        ax_bg.figure.canvas.flush_events()
+        plt.pause(0.1)
 
 
 if __name__ == "__main__":
