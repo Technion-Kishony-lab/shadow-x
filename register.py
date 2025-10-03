@@ -1,9 +1,7 @@
 import cv2
 import numpy as np
 
-from matplotlib import pyplot as plt
-
-from graphics.helpers import subtract_images
+from graphics.helpers import subtract_images, wait_for_keypress
 from graphics.patterns import get_array_of_circles_image
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
     set_background_image, illuminate, get_background_image_size, set_camera_display_image
@@ -11,15 +9,13 @@ from resources import get_background_axes, get_overhead_camera, set_matplotlib_b
 set_matplotlib_backend()
 
 
-def _get_mapping(xs, ys, detected_circles):
-    screen_vertices = np.array(
-        [
-            [x, y]
-            for x in xs
-            for y in ys
-        ]
-    )
+def _get_mapping(xs, ys, detected_circles, corners_only=True):
+    screen_vertices = np.array([[x, y] for x in xs for y in ys])
+
     camera_vertices = detected_circles.astype(np.float32)
+    if corners_only:
+        screen_vertices = screen_vertices[[0, -1, -len(xs), len(xs)-1]]
+        camera_vertices = camera_vertices[[0, -1, -len(xs), len(xs)-1]]
 
     H, mask = cv2.findHomography(camera_vertices, screen_vertices, cv2.RANSAC)
     if H is None:
@@ -38,20 +34,6 @@ def _map_from_camera_points_to_screen_points(mapping, camera_points):
 def map_camera_image_to_screen_image(mapping, camera_image, output_size):
     screen_image = cv2.warpPerspective(camera_image, mapping, output_size)
     return screen_image
-
-
-def wait_for_keypress(fig, options=('y', 'n')) -> str:
-    key_pressed = None
-
-    def on_key_press(event):
-        nonlocal key_pressed
-        key_pressed = event.key.lower()
-
-    fig.canvas.mpl_connect('key_press_event', on_key_press)
-
-    while key_pressed not in options:
-        plt.pause(0.1)
-    return key_pressed
 
 
 def register_screen_camera(num_tile_rows=10, display=True):
