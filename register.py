@@ -3,7 +3,8 @@ import numpy as np
 
 from graphics.helpers import subtract_images, wait_for_keypress
 from graphics.patterns import get_array_of_circles_image
-from mapping import Mapping, HomographyMapping
+from mapping import HomographyMapping as Mapping
+# from mapping import PolynomialWarpMapping as Mapping
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
     set_background_image, illuminate, get_background_image_size, set_camera_display_image
 
@@ -40,7 +41,7 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
         ret, centers = cv2.findCirclesGrid(diff_image, (len(ys), len(xs)), cv2.CALIB_CB_SYMMETRIC_GRID)
 
         if ret:
-            mapping = HomographyMapping.from_matching_points(np.array([[x, y] for x in xs for y in ys]), centers)
+            mapping = Mapping.from_matching_points(np.array([[x, y] for x in xs for y in ys]), centers)
             if display is False:
                 break
 

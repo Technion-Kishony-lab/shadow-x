@@ -2,7 +2,6 @@ import matplotlib
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
-from matplotlib.image import AxesImage
 
 from env import BACKGROUND_SCREEN, DISPLAY_SCREEN, OVERHEAD_CAMERA, BACKEND, BACKGROUND_SCREEN_BIN_SIZE
 from camera import get_or_create_camera, Camera
@@ -68,4 +67,3 @@ def illuminate(color=(255, 255, 255), pause=1):
     background_image = np.zeros((size[0], size[1], 3), dtype=np.uint8)
     background_image[:, :] = color
     set_background_image(background_image, pause=pause)
-

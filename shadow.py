@@ -10,9 +10,9 @@ from resources import set_matplotlib_backend, get_overhead_camera, \
 BACKGROUND_COLOR = (255, 255, 255)
 SHADOW_COLOR = (255, 0, 0)
 
-SHOW_CAMERA_DISPLAY = False
-SHOW_CAMERA_DISPLAY_SHADOW = False
-PRINT_TIMERS = True
+SHOW_CAMERA_DISPLAY = True
+SHOW_CAMERA_DISPLAY_SHADOW = True
+PRINT_TIMERS = False
 
 set_matplotlib_backend()
 
