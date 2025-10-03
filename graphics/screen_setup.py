@@ -20,14 +20,13 @@ def get_screen_geometry(screen=0):
     """
     set_matplotlib_backend()
     fig, ax = plt.subplots()
-    fig.canvas.manager.set_window_title("Place this figure on the desired screen in full screen mode, then press Enter.")
+    fig.canvas.manager.set_window_title("Place me on the desired screen in full screen mode, then press Enter.")
     plt.show(block=False)
     wait_for_keypress(fig, options=('enter', 'return'))
     geom = get_figure_geomotry(fig)
     plt.close(fig)
     print(f"Detected screen {screen} geometry: {geom}")
     print("Parsed geometry (w, h, x, y):", parse_geometry(geom))
-
 
 
 if __name__ == "__main__":

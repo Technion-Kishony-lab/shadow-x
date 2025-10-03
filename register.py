@@ -49,7 +49,7 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
 
         set_camera_display_image(diff_image)
         if not ret:
-            disp_ax.set_title("Pattern NOT detected. Press Enter to break, or adjust setup and press Space to try again.")
+            disp_ax.set_title("Pattern NOT detected. Press Enter to break, or adjust setup and press Space to retry.")
         else:
             # plot the detected circles on the camera image:
             disp_ax.plot(centers[:, 0, 0], centers[:, 0, 1], 'rx', markersize=7)

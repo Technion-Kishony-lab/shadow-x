@@ -1,13 +1,8 @@
-
-
-import cv2
 import numpy as np
 
 from matplotlib import pyplot as plt
-import timers
 
 from graphics.helpers import subtract_images, wait_for_keypress
-from register import register_screen_camera
 from resources import set_matplotlib_backend, get_overhead_camera, \
     illuminate, set_camera_display_image, set_background_image, get_background_image_size, get_camera_display_axes
 
