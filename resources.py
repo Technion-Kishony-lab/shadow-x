@@ -74,4 +74,4 @@ def illuminate(color=(255, 255, 255), pause=1):
     size = get_background_image_size()
     background_image = np.zeros((size[0], size[1], 3), dtype=np.uint8)
     background_image[:, :] = color
-    set_background_image(background_image, pause=pause)
+    return set_background_image(background_image, pause=pause)

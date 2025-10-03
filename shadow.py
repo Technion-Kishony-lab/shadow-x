@@ -23,9 +23,16 @@ camera = get_overhead_camera()
 
 mapping = register_screen_camera(12, display=True)
 
-illuminate(color=BACKGROUND_COLOR, pause=1)
+ax, img = illuminate(color=BACKGROUND_COLOR, pause=1)
+fig = ax.figure
 image0 = camera.take_picture()
 bgd_image_size = get_background_image_size()
+
+# Setup matplotlib figure for blitting
+plt.show(block=False)
+
+# Create background for blitting
+background = fig.canvas.copy_from_bbox(ax.bbox)
 
 
 def detect_obstractions(bgd_img, frame):
@@ -65,11 +72,12 @@ for i in range(5000):
         with timers.timeit("map_camera_image_to_screen_image"):
             screen_image = mapping.map_camera_image_to_screen_image(shadow_image_on_camera, bgd_image_size[::-1])
 
-        with timers.timeit("set_background_image"):
-            set_background_image(screen_image)
-
-        with timers.timeit("plt.pause"):
-            plt.pause(0.001)
+        with timers.timeit("blit_update"):
+            fig.canvas.restore_region(background)
+            img.set_data(screen_image)
+            ax.draw_artist(img)
+            fig.canvas.blit(ax.bbox)
+            fig.canvas.flush_events()
 
     if i % 100 == 0 and PRINT_TIMERS:
         print('\n')
