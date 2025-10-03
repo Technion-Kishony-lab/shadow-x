@@ -51,20 +51,23 @@ def set_axes_image(ax, image: np.ndarray):
         assert np.all(img.get_array().shape[:2] == image.shape[:2])
         img.set_array(image)
     else:
-        ax.imshow(image, cmap='gray', vmin=0, vmax=255)
+        img = ax.imshow(image, cmap='gray', vmin=0, vmax=255)
     ax.figure.canvas.draw()
+    return img
 
 
 def set_background_image(image: np.ndarray, pause=0):
     ax = get_background_axes()
-    set_axes_image(ax, image)
+    img = set_axes_image(ax, image)
     if pause:
         plt.pause(pause)
+    return ax, img
 
 
 def set_camera_display_image(image: np.ndarray, index=0):
     ax = get_camera_display_axes(index)
-    set_axes_image(ax, image)
+    img = set_axes_image(ax, image)
+    return ax, img
 
 
 def illuminate(color=(255, 255, 255), pause=1):

@@ -13,7 +13,7 @@ OVERHEAD_CAMERA = {
     'color_order': 'BGR',
 }
 
-BACKEND = 'tkagg'  # 'tkagg', 'wxagg', 'qt5agg', 'qt6agg'
+BACKEND = 'qtagg'  # 'tkagg', 'wxagg', 'qt5agg', 'qt6agg'
 
 
 # If using TK, use get_screen_geometrys() from graphics.helpers to get the screen geometries:

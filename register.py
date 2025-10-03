@@ -36,9 +36,9 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
         set_background_image(image_with_circles, pause=0.5)
         image1 = camera.take_picture()
 
-        diff_image = 255 - subtract_images(image1, image0, as_gray=True, as_uint8=True)
+        diff_image = subtract_images(image1, image0, as_gray=True, as_uint8=True)
 
-        ret, centers = cv2.findCirclesGrid(diff_image, (len(ys), len(xs)), cv2.CALIB_CB_SYMMETRIC_GRID)
+        ret, centers = cv2.findCirclesGrid(255 - diff_image, (len(ys), len(xs)), cv2.CALIB_CB_SYMMETRIC_GRID)
 
         if ret:
             mapping = Mapping.from_matching_points(np.array([[x, y] for x in xs for y in ys]), centers)
@@ -46,15 +46,14 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
                 break
 
         disp_ax = get_camera_display_axes()
-        # disp_ax.imshow(diff_image, cmap='gray')
-        print('diff image shape:', diff_image.shape)
+
         set_camera_display_image(diff_image)
         if not ret:
-            disp_ax.set_title("Pattern NOT detected. Press 'y' to break, or adjust setup and press 'n' to try again.")
+            disp_ax.set_title("Pattern NOT detected. Press Enter to break, or adjust setup and press Space to try again.")
         else:
             # plot the detected circles on the camera image:
             disp_ax.plot(centers[:, 0, 0], centers[:, 0, 1], 'rx', markersize=7)
-            disp_ax.set_title("Pattern detected. Press 'y' to confirm, or adjust setup and press 'n' to try again.")
+            disp_ax.set_title("Pattern detected. Press Enter to confirm, or adjust setup and press Space to try again.")
 
             # map the detected circles to screen coordinates:
             screen_points = mapping.map_camera_points_to_screen_points(centers)
@@ -64,8 +63,8 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
             ax_bgd.figure.canvas.draw()
             disp_ax.figure.canvas.draw()
 
-        key = wait_for_keypress(disp_ax.figure)
-        if key == 'y':
+        key = wait_for_keypress(disp_ax.figure, options=('enter', ' '))
+        if key == 'enter':
             ax_bgd.cla()
             disp_ax.cla()
             break

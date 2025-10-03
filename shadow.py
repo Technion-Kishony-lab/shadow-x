@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from PIL.ImageFilter import SMOOTH
+
 from matplotlib import pyplot as plt
 import timers
 
@@ -12,8 +12,8 @@ from resources import set_matplotlib_backend, get_overhead_camera, \
 BACKGROUND_COLOR = (255, 255, 255)
 SHADOW_COLOR = (255, 0, 0)
 
-SHOW_CAMERA_DISPLAY = True
-SHOW_CAMERA_DISPLAY_SHADOW = True
+SHOW_CAMERA_DISPLAY = False
+SHOW_CAMERA_DISPLAY_SHADOW = False
 SMOOTHING = False
 PRINT_TIMERS = False
 
@@ -29,11 +29,10 @@ bgd_image_size = get_background_image_size()
 
 
 def detect_obstractions(bgd_img, frame):
-    normalized_image = frame.astype(np.float32) / (bgd_img.astype(np.float32) + 1)
-    is_red = normalized_image[:, :, 0] > 1.1 * normalized_image[:, :, 2]
-    detected_mask = np.abs(subtract_images(bgd_img[:, :, 2:], frame[:, :, 2:], as_gray=True)) > 70
-
-    return detected_mask & ~is_red
+    # normalized_image = frame.astype(np.float32) / (bgd_img.astype(np.float32) + 1)
+    # is_red = normalized_image[:, :, 0] > 1.5 * normalized_image[:, :, 2]
+    # detected_mask = np.abs(subtract_images(bgd_img[:, :, 2:], frame[:, :, 2:], as_gray=True)) > 30
+    return bgd_img[:, :, 0].astype(float) - frame[:, :, 0].astype(float) > 60
 
 
 for i in range(5000):
