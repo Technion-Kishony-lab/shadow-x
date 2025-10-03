@@ -6,7 +6,7 @@ from matplotlib.axes import Axes
 from env import BACKGROUND_SCREEN, DISPLAY_SCREEN, OVERHEAD_CAMERA, BACKEND, BACKGROUND_SCREEN_BIN_SIZE
 from camera import get_or_create_camera, Camera
 
-from graphics.figures import get_or_create_named_figure
+from graphics.figures import get_or_create_named_figure, get_figure_if_existing
 from graphics.helpers import get_axes_size_in_pixels
 
 
@@ -24,11 +24,16 @@ def get_background_axes() -> Axes:
 
 
 def get_camera_display_axes(index=0) -> Axes:
+    fig_name = f"display{index}"
+    fig, ax = get_figure_if_existing(fig_name)
+    if ax is not None:
+        return ax
+
     camera_resolution_pixels = get_overhead_camera().get_resolution()
     axes_position = np.array([0.1, 0.1, 0.8, 0.85])
     figure_position = np.array([100 + index*100, 100, camera_resolution_pixels[0] / axes_position[3],
                                 camera_resolution_pixels[1] / axes_position[2]]).astype(int)
-    fig, ax = get_or_create_named_figure(f"display{index}", screen=DISPLAY_SCREEN, figure_position=figure_position,
+    fig, ax = get_or_create_named_figure(fig_name, screen=DISPLAY_SCREEN, figure_position=figure_position,
                                          axes_position=axes_position, is_image=True)
     return ax
 

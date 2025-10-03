@@ -115,3 +115,7 @@ def get_or_create_named_figure(name, screen=0, figure_position="full", axes_posi
         ax.set_yticks([])
     NAMES_TO_FIGUES_AND_AXES[name] = (fig, ax)
     return fig, ax
+
+
+def get_figure_if_existing(name):
+    return NAMES_TO_FIGUES_AND_AXES.get(name, (None, None))
