@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 
+from env import SCREENS_TO_COORDS
+
 NAMES_TO_FIGUES_AND_AXES = {}
 
 
@@ -21,6 +23,8 @@ def set_figure_position(fig, screen=0, position="full"):
     backend = matplotlib.get_backend().lower()
     manager = plt._pylab_helpers.Gcf.get_fig_manager(fig.number)
 
+    is_full = isinstance(position, str) and position == "full"
+
     # --- Qt-based backends ---
     if "qt" in backend:
         try:
@@ -34,7 +38,7 @@ def set_figure_position(fig, screen=0, position="full"):
 
             geometry = screens[screen].geometry()
             window = manager.window
-            if isinstance(position, str) and position == "full":
+            if is_full:
                 window.setGeometry(geometry)
                 window.showFullScreen()
             elif position is None:
@@ -49,19 +53,26 @@ def set_figure_position(fig, screen=0, position="full"):
 
     # --- TkAgg backend ---
     if "tkagg" in backend:
+        screen_width, screen_height, x_offset, y_offset = SCREENS_TO_COORDS[screen]
         window = manager.window  # Tkinter.Tk
-        screen_width = window.winfo_screenwidth()
-        screen_height = window.winfo_screenheight()
 
-        x_offset = screen * screen_width
-        y_offset = 0
-
-        if position == "full":
-            window.geometry(f"{screen_width}x{screen_height}+{x_offset}+{y_offset}")
+        if is_full:
+            new_geom = f"{300}x{300}+{x_offset}+{y_offset}"
+            window.geometry(new_geom)
+            # refresh the graphics:
+            window.update_idletasks()
             window.attributes('-fullscreen', True)
+            window.update_idletasks()
+            plt.pause(0.1)  # allow time for the window to update
         else:
             x, y, w, h = position
-            window.geometry(f"{w}x{h}+{x_offset + x}+{y_offset + y}")
+            new_geom = f"{w}x{h}+{x_offset + x}+{y_offset + y}"
+            plt.pause(0.1)  # allow time for the window to update
+            window.geometry(new_geom)
+            window.update_idletasks()
+            plt.pause(0.1)  # allow time for the window to update
+
+        print(f"Set window geometry to: {new_geom}, fullscreen: {is_full}")
         return
 
     # --- WXAgg backend ---
@@ -73,7 +84,7 @@ def set_figure_position(fig, screen=0, position="full"):
             raise ValueError(f"Requested screen {screen}, but only {len(displays)} available.")
         geometry = displays[screen].GetGeometry()
         frame = manager.frame
-        if position == "full":
+        if is_full:
             frame.SetPosition((geometry.x, geometry.y))
             frame.SetSize((geometry.width, geometry.height))
         else:
