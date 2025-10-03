@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import timers
 
 from graphics.helpers import subtract_images
-from register import register_screen_camera, map_camera_image_to_screen_image
+from register import register_screen_camera
 from resources import set_matplotlib_backend, get_overhead_camera, \
     illuminate, set_camera_display_image, set_background_image, get_background_image_size
 
@@ -53,7 +53,7 @@ for i in range(5000):
                 set_camera_display_image(shadow_image_on_camera, index=1)
 
         with timers.timeit("map_camera_image_to_screen_image"):
-            screen_image = map_camera_image_to_screen_image(mapping, shadow_image_on_camera, bgd_image_size[::-1])
+            screen_image = mapping.map_camera_image_to_screen_image(shadow_image_on_camera, bgd_image_size[::-1])
 
         with timers.timeit("set_background_image"):
             set_background_image(screen_image)
