@@ -1,4 +1,6 @@
+import cv2
 import numpy as np
+from PIL.ImageFilter import SMOOTH
 from matplotlib import pyplot as plt
 import timers
 
@@ -12,6 +14,7 @@ SHADOW_COLOR = (255, 0, 0)
 
 SHOW_CAMERA_DISPLAY = True
 SHOW_CAMERA_DISPLAY_SHADOW = True
+SMOOTHING = False
 PRINT_TIMERS = False
 
 set_matplotlib_backend()
@@ -44,6 +47,14 @@ for i in range(5000):
 
         with timers.timeit("detect_obstractions"):
             detected_mask = detect_obstractions(image0, image1)
+
+        if SMOOTHING:
+            with timers.timeit("smoothing"):
+                # detected_mask = cv2.morphologyEx(detected_mask.astype(np.uint8), cv2.MORPH_OPEN,
+                #                                  np.ones((3, 3), np.uint8)).astype(bool)
+                detected_mask = cv2.blur(detected_mask.astype(np.float32), (5, 5)) > 0.1
+
+        with timers.timeit("create shadow image"):
             shadow_image_on_camera = np.zeros_like(image1)
             shadow_image_on_camera[:, :] = BACKGROUND_COLOR
             shadow_image_on_camera[detected_mask] = SHADOW_COLOR
