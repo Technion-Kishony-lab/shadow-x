@@ -13,22 +13,24 @@ class Camera:
     buffer_size: int
     rotate: int = None
     color_order: Optional[str] = None
-    cap: Optional[cv2.VideoCapture] = None
+    exposure: Optional[float] = None
+    _cap: Optional[cv2.VideoCapture] = None
 
     @classmethod
-    def create(cls, index=0, fps=30, buffer_size=1, rotate=None, color_order=None):
-        self = cls(index=index, fps=fps, buffer_size=buffer_size, rotate=rotate, color_order=color_order)
+    def create(cls, index=0, fps=30, buffer_size=1, rotate=None, color_order=None, exposure=None):
+        self = cls(index=index, fps=fps, buffer_size=buffer_size, rotate=rotate, color_order=color_order,
+                   exposure=exposure)
         self.get_capture()  # Initialize the capture
         return self
 
     def get_capture(self):
-        if self.cap is not None:
-            return self.cap
+        if self._cap is not None:
+            return self._cap
         cap = cv2.VideoCapture(self.index)
         time.sleep(1)
         if not cap.isOpened():
             raise Exception(f"Error: Could not open camera {self.index}")
-        self.cap = cap
+        self._cap = cap
         self.set_properties()
         return cap
 
@@ -36,6 +38,8 @@ class Camera:
         cap = self.get_capture()
         cap.set(cv2.CAP_PROP_FPS, self.fps)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, self.buffer_size)
+        if self.exposure is not None:
+            cap.set(cv2.CAP_PROP_EXPOSURE, float(self.exposure))
 
     def take_picture(self):
         cap = self.get_capture()
@@ -64,15 +68,15 @@ class Camera:
         return frame, filename
 
     def release(self):
-        if self.cap is not None:
-            self.cap.release()
-            self.cap = None
+        if self._cap is not None:
+            self._cap.release()
+            self._cap = None
 
 
 INDEX_TO_CAMERAS: dict[int, Camera] = {}
 
 
-def get_or_create_camera(camera_index=0, fps=30, buffer_size=1, rotate=0, color_order=None) -> Camera:
+def get_or_create_camera(camera_index=0, fps=30, buffer_size=1, rotate=0, color_order=None, exposure=None) -> Camera:
     if camera_index not in INDEX_TO_CAMERAS:
         INDEX_TO_CAMERAS[camera_index] = Camera.create(
             index=camera_index,
@@ -80,6 +84,7 @@ def get_or_create_camera(camera_index=0, fps=30, buffer_size=1, rotate=0, color_
             buffer_size=buffer_size,
             rotate=rotate,
             color_order=color_order,
+            exposure=exposure
         )
 
     return INDEX_TO_CAMERAS[camera_index]
