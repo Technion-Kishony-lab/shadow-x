@@ -15,13 +15,16 @@ SHADOW_COLOR = (255, 0, 0)
 SHOW_CAMERA_DISPLAY = False
 SHOW_CAMERA_DISPLAY_SHADOW = False
 SMOOTHING = False
-PRINT_TIMERS = False
+PRINT_TIMERS = True
 
 set_matplotlib_backend()
 
 camera = get_overhead_camera()
 
 mapping = register_screen_camera(12, display=True)
+
+empty_background_image_on_camera = np.zeros((camera.get_resolution()[1], camera.get_resolution()[0], 3), dtype=np.uint8)
+empty_background_image_on_camera[:, :] = BACKGROUND_COLOR
 
 ax, img = illuminate(color=BACKGROUND_COLOR, pause=1)
 fig = ax.figure
@@ -61,8 +64,7 @@ for i in range(5000):
                 detected_mask = cv2.blur(detected_mask.astype(np.float32), (5, 5)) > 0.1
 
         with timers.timeit("create shadow image"):
-            shadow_image_on_camera = np.zeros_like(image1)
-            shadow_image_on_camera[:, :] = BACKGROUND_COLOR
+            shadow_image_on_camera = empty_background_image_on_camera.copy()
             shadow_image_on_camera[detected_mask] = SHADOW_COLOR
 
         if SHOW_CAMERA_DISPLAY_SHADOW:
@@ -73,7 +75,7 @@ for i in range(5000):
             screen_image = mapping.map_camera_image_to_screen_image(shadow_image_on_camera, bgd_image_size[::-1])
 
         with timers.timeit("blit_update"):
-            fig.canvas.restore_region(background)
+            # fig.canvas.restore_region(background)
             img.set_data(screen_image)
             ax.draw_artist(img)
             fig.canvas.blit(ax.bbox)
