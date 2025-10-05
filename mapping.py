@@ -16,6 +16,14 @@ class Mapping:
 
     def map_camera_image_to_screen_image(self, camera_image, output_size):
         pass
+    
+    def calculate_accuracy(self, expected_screen_points, mapped_screen_points):
+        """
+        Calculate mapping accuracy by measuring distances between mapped points and expected screen points.
+        Returns mean distance in pixels.
+        """
+        distances = np.linalg.norm(mapped_screen_points - expected_screen_points, axis=1)
+        return distances.mean()
 
 
 class HomographyMapping(Mapping):
@@ -120,8 +128,8 @@ class PolynomialWarpMapping(Mapping):
         Find camera coordinates that map to given screen coordinates.
         Uses iterative method to solve the inverse mapping.
         """
-        # Start with screen coordinates as initial guess
-        camera_coords = screen_coords.copy()
+        # Start with screen coordinates as initial guess (use float for updates)
+        camera_coords = screen_coords.astype(np.float64, copy=True)
         
         # Iterative refinement to find inverse mapping
         for _ in range(5):  # Usually converges in 3-5 iterations
@@ -129,7 +137,7 @@ class PolynomialWarpMapping(Mapping):
             mapped_screen = self.map_camera_points_to_screen_points(camera_coords)
             
             # Calculate error
-            error = screen_coords - mapped_screen
+            error = screen_coords.astype(np.float64) - mapped_screen
             
             # Update camera coordinates based on error
             # Simple gradient descent approach

@@ -26,12 +26,12 @@ def get_diff_image(num_tile_rows):
     image1 = camera.take_picture()
 
     diff_image = subtract_images(image1, image0, as_gray=True, as_uint8=True)
-    return diff_image, xs, ys
+    centers_on_screen = np.array([[x, y] for x in xs for y in ys])
+    return diff_image, xs, ys, centers_on_screen
 
 
 def get_centers_on_screen_and_camera(num_tile_rows):
-    diff_image, xs, ys = get_diff_image(num_tile_rows)
-    centers_on_screen = np.array([[x, y] for x in xs for y in ys])
+    diff_image, xs, ys, centers_on_screen = get_diff_image(num_tile_rows)
     ret, centers_on_camera = find_circles_grid(diff_image, (len(ys), len(xs)))
     image_size = diff_image.shape
     if not ret:
@@ -80,9 +80,9 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
             # map the detected circles to screen coordinates:
             screen_points = mapping.map_camera_points_to_screen_points(centers_on_camera)
 
-            # clac the mean of the squared distances between the mapped points and the screen points:
-            distances = np.linalg.norm(screen_points - centers_on_screen, axis=1)
-            print(f"Mean of squared distances: {distances.mean()}")
+            # calculate mapping accuracy:
+            mean_error = mapping.calculate_accuracy(centers_on_screen, screen_points)
+            print(f"Mean mapping error: {mean_error:.2f} pixels")
 
             # plot the mapped points on the screen chessboard:
             ax_bgd.plot(screen_points[:, 0], screen_points[:, 1], 'rx', markersize=7)
