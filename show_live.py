@@ -6,7 +6,7 @@ set_matplotlib_backend()
 
 camera = get_overhead_camera()
 
-for i in range(500):
+for i in range(5000):
     frame = camera.take_picture()
     set_camera_display_image(frame)
     plt.pause(0.01)

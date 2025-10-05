@@ -3,11 +3,12 @@ import numpy as np
 
 
 class Mapping:
-    def __init__(self, mapping):
-        self.mapping = mapping
-
     @classmethod
     def from_matching_points(cls, screen_points, camera_points, **kwargs):
+        """
+        Create a mapping from matching points.
+        screen_points, camera_points: numpy arrays of shape (n, 2)
+        """
         pass
 
     def map_camera_points_to_screen_points(self, camera_points):
@@ -18,9 +19,13 @@ class Mapping:
 
 
 class HomographyMapping(Mapping):
+    def __init__(self, mapping):
+        self.mapping = mapping
 
     @classmethod
-    def from_matching_points(cls, screen_points, camera_points, corners_only=False, num_rows=None):
+    def from_matching_points(cls, screen_points, camera_points, image_size=None,
+                             corners_only=False, num_rows=None):
+
         if corners_only:
             corners = [0, -1, -num_rows, num_rows - 1]
             screen_points = screen_points[corners]
@@ -35,7 +40,6 @@ class HomographyMapping(Mapping):
         return cls(H)
 
     def map_camera_points_to_screen_points(self, camera_points):
-        camera_points = camera_points.reshape(-1, camera_points.shape[-1])
         camera_points_homogeneous = np.hstack([camera_points, np.ones((camera_points.shape[0], 1))])
         screen_points_homogeneous = camera_points_homogeneous @ self.mapping.T
         screen_points = screen_points_homogeneous[:, :2] / screen_points_homogeneous[:, 2:3]
@@ -57,17 +61,10 @@ class PolynomialWarpMapping(Mapping):
         self.degree = degree
 
     @classmethod
-    def from_matching_points(cls, screen_points, camera_points, degree=3):
+    def from_matching_points(cls, screen_points, camera_points, image_size=None, degree=3):
         """
         Fit polynomial warp of given degree mapping camera_points -> screen_points.
         """
-        camera_points = np.asarray(camera_points, dtype=np.float64)
-        camera_points = camera_points.reshape(-1, 2)
-        screen_points = np.asarray(screen_points, dtype=np.float64)
-
-        if camera_points.shape != screen_points.shape:
-            raise ValueError("camera_points and screen_points must have the same shape")
-
         # Build polynomial design matrix
         X = cls._polynomial_terms(camera_points, degree)
 
@@ -78,7 +75,6 @@ class PolynomialWarpMapping(Mapping):
         return cls(coeffs_x, coeffs_y, degree)
 
     def map_camera_points_to_screen_points(self, camera_points):
-        camera_points = camera_points.reshape(-1, 2)
         terms = self._polynomial_terms(camera_points, self.degree)
         x_mapped = terms @ self.coeffs_x
         y_mapped = terms @ self.coeffs_y

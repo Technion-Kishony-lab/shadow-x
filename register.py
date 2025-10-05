@@ -39,9 +39,14 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
         diff_image = subtract_images(image1, image0, as_gray=True, as_uint8=True)
 
         ret, centers = cv2.findCirclesGrid(255 - diff_image, (len(ys), len(xs)), cv2.CALIB_CB_SYMMETRIC_GRID)
+        centers = centers.reshape(-1, 2)
 
         if ret:
-            mapping = Mapping.from_matching_points(np.array([[x, y] for x in xs for y in ys]), centers)
+            mapping = Mapping.from_matching_points(
+                np.array([[x, y] for x in xs for y in ys]), 
+                centers,
+                image_size=camera.get_resolution()
+            )
             if display is False:
                 break
 
@@ -52,7 +57,7 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
             disp_ax.set_title("Pattern NOT detected. Press Enter to break, or adjust setup and press Space to retry.")
         else:
             # plot the detected circles on the camera image:
-            disp_ax.plot(centers[:, 0, 0], centers[:, 0, 1], 'rx', markersize=7)
+            disp_ax.plot(centers[:, 0], centers[:, 1], 'rx', markersize=7)
             disp_ax.set_title("Pattern detected. Press Enter to confirm, or adjust setup and press Space to try again.")
 
             # map the detected circles to screen coordinates:
