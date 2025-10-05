@@ -4,7 +4,7 @@ import numpy as np
 
 class Mapping:
     @classmethod
-    def from_matching_points(cls, screen_points, camera_points, **kwargs):
+    def from_matching_points(cls, screen_points, camera_points, image_size, **kwargs):
         """
         Create a mapping from matching points.
         screen_points, camera_points: numpy arrays of shape (n, 2)
@@ -23,7 +23,7 @@ class HomographyMapping(Mapping):
         self.mapping = mapping
 
     @classmethod
-    def from_matching_points(cls, screen_points, camera_points, image_size=None,
+    def from_matching_points(cls, screen_points, camera_points, image_size,
                              corners_only=False, num_rows=None):
 
         if corners_only:
@@ -51,31 +51,44 @@ class HomographyMapping(Mapping):
 
 
 class PolynomialWarpMapping(Mapping):
-    def __init__(self, coeffs_x, coeffs_y, degree):
+    def __init__(self, coeffs_x, coeffs_y, degree, image_center):
         """
         coeffs_x, coeffs_y: coefficients for polynomial mapping
         degree: polynomial degree
+        image_center: (cx, cy) center of the camera image
         """
         self.coeffs_x = coeffs_x
         self.coeffs_y = coeffs_y
         self.degree = degree
+        self.image_center = image_center
 
     @classmethod
-    def from_matching_points(cls, screen_points, camera_points, image_size=None, degree=3):
+    def from_matching_points(cls, screen_points, camera_points, image_size, degree=3):
         """
         Fit polynomial warp of given degree mapping camera_points -> screen_points.
         """
+        # Calculate image center
+        cx, cy = image_size[0] / 2, image_size[1] / 2
+        image_center = (cx, cy)
+        
+        # Convert camera points to center-relative coordinates
+        camera_points_centered = camera_points - np.array([cx, cy])
+        
         # Build polynomial design matrix
-        X = cls._polynomial_terms(camera_points, degree)
+        X = cls._polynomial_terms(camera_points_centered, degree)
 
         # Solve least squares: screen = X @ coeffs
         coeffs_x, _, _, _ = np.linalg.lstsq(X, screen_points[:, 0], rcond=None)
         coeffs_y, _, _, _ = np.linalg.lstsq(X, screen_points[:, 1], rcond=None)
 
-        return cls(coeffs_x, coeffs_y, degree)
+        return cls(coeffs_x, coeffs_y, degree, image_center)
 
     def map_camera_points_to_screen_points(self, camera_points):
-        terms = self._polynomial_terms(camera_points, self.degree)
+        # Convert to center-relative coordinates
+        cx, cy = self.image_center
+        camera_points_centered = camera_points - np.array([cx, cy])
+        
+        terms = self._polynomial_terms(camera_points_centered, self.degree)
         x_mapped = terms @ self.coeffs_x
         y_mapped = terms @ self.coeffs_y
         return np.column_stack([x_mapped, y_mapped])
@@ -110,8 +123,8 @@ class PolynomialWarpMapping(Mapping):
         E.g. degree=2 → [1, x, y, x^2, xy, y^2]
         """
         x, y = points[:, 0], points[:, 1]
-        terms = [np.ones_like(x)]
-        for d in range(1, degree + 1):
+        terms = []
+        for d in range(0, degree + 1):
             for i in range(d + 1):
                 j = d - i
                 terms.append((x ** i) * (y ** j))

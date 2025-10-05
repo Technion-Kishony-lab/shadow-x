@@ -3,8 +3,8 @@ import numpy as np
 
 from graphics.helpers import subtract_images, wait_for_keypress
 from graphics.patterns import get_array_of_circles_image
-from mapping import HomographyMapping as Mapping
-# from mapping import PolynomialWarpMapping as Mapping
+# from mapping import HomographyMapping as Mapping
+from mapping import PolynomialWarpMapping as Mapping
 from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
     set_background_image, illuminate, get_background_image_size, set_camera_display_image
 
@@ -38,13 +38,14 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
 
         diff_image = subtract_images(image1, image0, as_gray=True, as_uint8=True)
 
-        ret, centers = cv2.findCirclesGrid(255 - diff_image, (len(ys), len(xs)), cv2.CALIB_CB_SYMMETRIC_GRID)
-        centers = centers.reshape(-1, 2)
+        ret, centers_on_camera = cv2.findCirclesGrid(255 - diff_image, (len(ys), len(xs)), cv2.CALIB_CB_SYMMETRIC_GRID)
+        centers_on_camera = centers_on_camera.reshape(-1, 2)
+        centers_on_screen = np.array([[x, y] for x in xs for y in ys])
 
         if ret:
             mapping = Mapping.from_matching_points(
-                np.array([[x, y] for x in xs for y in ys]), 
-                centers,
+                centers_on_screen, 
+                centers_on_camera,
                 image_size=camera.get_resolution()
             )
             if display is False:
@@ -57,11 +58,15 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
             disp_ax.set_title("Pattern NOT detected. Press Enter to break, or adjust setup and press Space to retry.")
         else:
             # plot the detected circles on the camera image:
-            disp_ax.plot(centers[:, 0], centers[:, 1], 'rx', markersize=7)
+            disp_ax.plot(centers_on_camera[:, 0], centers_on_camera[:, 1], 'rx', markersize=7)
             disp_ax.set_title("Pattern detected. Press Enter to confirm, or adjust setup and press Space to try again.")
 
             # map the detected circles to screen coordinates:
-            screen_points = mapping.map_camera_points_to_screen_points(centers)
+            screen_points = mapping.map_camera_points_to_screen_points(centers_on_camera)
+
+            # clac the mean of the squared distances between the mapped points and the screen points:
+            distances = np.linalg.norm(screen_points - centers_on_screen, axis=1)
+            print(f"Mean of squared distances: {distances.mean()}")
 
             # plot the mapped points on the screen chessboard:
             ax_bgd.plot(screen_points[:, 0], screen_points[:, 1], 'rx', markersize=7)
@@ -69,9 +74,9 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
             disp_ax.figure.canvas.draw()
 
         key = wait_for_keypress(disp_ax.figure, options=('enter', ' '))
+        disp_ax.cla()
         if key == 'enter':
             ax_bgd.cla()
-            disp_ax.cla()
             break
 
     return mapping
