@@ -11,6 +11,7 @@ from resources import set_matplotlib_backend, get_overhead_camera, \
 
 BACKGROUND_COLOR = (255, 255, 255)
 SHADOW_COLOR = (255, 0, 0)
+TEXT_COLOR = (200, 200, 255)
 
 SHOW_CAMERA_DISPLAY = False
 SHOW_CAMERA_DISPLAY_SHADOW = False
@@ -36,6 +37,12 @@ plt.show(block=False)
 
 # Create background for blitting
 background = fig.canvas.copy_from_bbox(ax.bbox)
+
+# add "Shadow Screen" text, with SHADOW_COLOR color (no outline), center of the image:
+text_image = np.zeros((bgd_image_size[0], bgd_image_size[1]), dtype=np.uint8)
+cv2.putText(text_image, 'Shadow-X', (bgd_image_size[0] // 12, bgd_image_size[1] // 2),
+            cv2.FONT_HERSHEY_SIMPLEX, 3, 255, 15, cv2.LINE_AA)
+text_image_mask = text_image > 0
 
 
 def detect_obstractions(bgd_img, frame):
@@ -73,6 +80,7 @@ for i in range(5000):
 
         with timers.timeit("map_camera_image_to_screen_image"):
             screen_image = mapping.map_camera_image_to_screen_image(shadow_image_on_camera, bgd_image_size[::-1])
+            screen_image[text_image_mask & (screen_image[:, :, 1] == BACKGROUND_COLOR[1])] = TEXT_COLOR
 
         with timers.timeit("blit_update"):
             # fig.canvas.restore_region(background)
