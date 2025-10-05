@@ -96,25 +96,46 @@ class PolynomialWarpMapping(Mapping):
     def map_camera_image_to_screen_image(self, camera_image, output_size):
         """
         Warp image using inverse mapping + interpolation.
-        For simplicity, use backward mapping (screen->camera).
+        For each screen pixel, find the corresponding camera pixel.
         """
         w, h = output_size
         # Create a grid of screen coordinates
         xv, yv = np.meshgrid(np.arange(w), np.arange(h))
         screen_coords = np.column_stack([xv.ravel(), yv.ravel()])
 
-        # Estimate inverse warp (approximate by fitting camera->screen inverse)
-        # Here we just use forward mapping approximation (not exact inverse)
-        # For accurate results, you’d fit another PolynomialWarpMapping with swapped roles.
-        # For now, we approximate by nearest neighbor
-        mapped = self.map_camera_points_to_screen_points(screen_coords)
+        # Find inverse mapping: screen -> camera
+        # We need to solve: screen_coords = f(camera_coords)
+        # For each screen coordinate, find the camera coordinate that maps to it
+        camera_coords = self._inverse_map_screen_to_camera(screen_coords)
 
-        map_x = mapped[:, 0].reshape(h, w).astype(np.float32)
-        map_y = mapped[:, 1].reshape(h, w).astype(np.float32)
+        map_x = camera_coords[:, 0].reshape(h, w).astype(np.float32)
+        map_y = camera_coords[:, 1].reshape(h, w).astype(np.float32)
 
         warped = cv2.remap(camera_image, map_x, map_y, interpolation=cv2.INTER_LINEAR,
                            borderMode=cv2.BORDER_CONSTANT)
         return warped
+
+    def _inverse_map_screen_to_camera(self, screen_coords):
+        """
+        Find camera coordinates that map to given screen coordinates.
+        Uses iterative method to solve the inverse mapping.
+        """
+        # Start with screen coordinates as initial guess
+        camera_coords = screen_coords.copy()
+        
+        # Iterative refinement to find inverse mapping
+        for _ in range(5):  # Usually converges in 3-5 iterations
+            # Map current camera coordinates to screen
+            mapped_screen = self.map_camera_points_to_screen_points(camera_coords)
+            
+            # Calculate error
+            error = screen_coords - mapped_screen
+            
+            # Update camera coordinates based on error
+            # Simple gradient descent approach
+            camera_coords += error * 0.5
+            
+        return camera_coords
 
     @staticmethod
     def _polynomial_terms(points, degree):
