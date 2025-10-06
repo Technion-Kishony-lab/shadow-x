@@ -1,35 +1,36 @@
 import time
-from contextlib import contextmanager
 
 
-LABELS_TO_TIMES_AND_COUNTS = {}
+class Timer:
+    def __init__(self, name):
+        self.name = name
+        self.times = []
 
+    def __enter__(self):
+        self.start_time = time.time()
+        return self
 
-@contextmanager
-def timeit(label, vervose=False):
-    t = time.time()
-    yield
-    elapsed = time.time() - t
-    if label not in LABELS_TO_TIMES_AND_COUNTS:
-        LABELS_TO_TIMES_AND_COUNTS[label] = [0., 0]
-    LABELS_TO_TIMES_AND_COUNTS[label][0] += elapsed
-    LABELS_TO_TIMES_AND_COUNTS[label][1] += 1
-    if vervose:
-        print(f"{label}: {elapsed * 1000:.1f} ms")
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        elapsed_time = time.time() - self.start_time
+        self.times.append(elapsed_time)
 
+    def reset(self):
+        self.times = []
 
-def print_time_and_reset(label):
-    if label in LABELS_TO_TIMES_AND_COUNTS:
-        total_time, count = LABELS_TO_TIMES_AND_COUNTS[label]
-        print(f"{label} avg: {total_time / count * 1000:.1f} ms over {count} calls")
-        LABELS_TO_TIMES_AND_COUNTS[label] = [0, 0]
+    def get_total_counts(self):
+        return len(self.times)
 
+    def get_total_time(self):
+        return sum(self.times)
 
-def reset_timers():
-    LABELS_TO_TIMES_AND_COUNTS.clear()
+    def get_avg_time(self):
+        count = self.get_total_counts()
+        return self.get_total_time() / count if count > 0 else 0
 
-
-def print_all_timers():
-    for label, (total_time, count) in LABELS_TO_TIMES_AND_COUNTS.items():
-        print(f"{label:50} avg: {total_time / count * 1000:.1f} ms over {count} calls")
-    LABELS_TO_TIMES_AND_COUNTS.clear()
+    def report(self, reset=False):
+        total_time = self.get_total_time()
+        count = self.get_total_counts()
+        avg_time = self.get_avg_time()
+        if reset:
+            self.reset()
+        return f"{self.name}: {total_time:.2f}s over {count} runs, avg: {avg_time:.2f}s"

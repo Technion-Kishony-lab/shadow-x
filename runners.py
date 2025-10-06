@@ -7,13 +7,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 from graphics.helpers import beep, subtract_images
 from mapping import HomographyMapping, Mapping
-import timers
 
 from register import register_screen_camera
 from resources import set_matplotlib_backend, get_overhead_camera, \
     set_camera_display_image, get_backlight_image_size, set_backlight_image
 
 from graphics.helpers import update_image, capture_background
+from timers import Timer
 
 
 
@@ -30,7 +30,51 @@ def build_args_parser():
     return parser
 
 
-class ShadowRunner:
+
+class Runner:
+    def __init__(self, iterations=5000, print_timers=True):
+        self.iterations = iterations
+        self.print_timers = print_timers
+        self.timers = {}
+
+    def get_timer(self, name):
+        if name not in self.timers:
+            self.timers[name] = Timer(name)
+        return self.timers[name]
+
+    def print_timers_report(self):
+        for timer in self.timers.values():
+            print(timer.report())
+
+    @staticmethod
+    def timed(func):
+        def wrapper(self, *args, **kwargs):
+            with self.get_timer(func.__name__):
+                return func(self, *args, **kwargs)
+        return wrapper
+
+    def _setup(self):
+        raise NotImplementedError("Subclasses should implement this!")
+
+    def run(self):
+        self._setup()
+        with Timer("Entire run") as timer:
+            for i in range(self.iterations):
+                with self.get_timer("all"):
+                    self._run_iteration(i)
+        return timer.get_avg_time()
+
+    @timed
+    def _run_iteration(self, i):
+        raise NotImplementedError("Subclasses should implement this!")
+
+    def maybe_print_timers(self, i):
+        if (i + 1) % 100 == 0 and self.print_timers:
+            print('\n')
+            self.print_timers_report()
+
+
+class ShadowRunner(Runner):
     MAPPING_CLASS = HomographyMapping
     BACKGROUND_COLOR = (255, 255, 255)
     SHADOW_COLOR = (255, 0, 0)
@@ -41,11 +85,10 @@ class ShadowRunner:
                  print_timers=True, registration_grid=12, use_blitting=True,
                  mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None,
                  refresh_together=True):
-        self.iterations = iterations
+        super().__init__(iterations, print_timers)
         self.show_camera = show_camera
         self.show_detection = show_detection
         self.smoothing = smoothing
-        self.print_timers = print_timers
         self.registration_grid = registration_grid
         self.use_blitting = use_blitting
         self.mapping_filepath = mapping_filepath
@@ -124,53 +167,39 @@ class ShadowRunner:
         self._setup_camera()
         beep()
 
+    def _run_iteration(self, i):
+        self._refresh_funcs = []
+        frame = self.take_picture()
+        self.maybe_show_camera(frame)
+        detection_mask = self.detect(frame)
+        detection_mask = self.adjust_detection_mask(detection_mask)
+        self.maybe_show_detection_mask(detection_mask)
+        screen_image = self.map_to_screen(detection_mask)
+        self.update_backlight_image(screen_image)
+        self.refresh_all()
 
-    def run(self):
-        self._setup()
-        t = time.time()
-        for i in range(self.iterations):
-            with timers.timeit("all"):
-                self._refresh_funcs = []
-                frame = self.take_picture()
-                self.maybe_show_camera(frame)
-                detection_mask = self.detect(frame)
-                detection_mask = self.adjust_detection_mask(detection_mask)
-                self.maybe_show_detection_mask(detection_mask)
-                screen_image = self.map_to_screen(detection_mask)
-                self.update_backlight_image(screen_image)
-                self.refresh_all()
-
-            self.maybe_print_timers(i)
-
-        return time.time() - t
+        self.maybe_print_timers(i)
 
     # --- timed helpers ---
 
-    @staticmethod
-    def timed(func):
-        def wrapper(self, *args, **kwargs):
-            with timers.timeit(func.__name__):
-                return func(self, *args, **kwargs)
-        return wrapper
-
-    @timed
+    @Runner.timed
     def refresh_all(self):
         for refresh_func in self._refresh_funcs:
             refresh_func()
         if not self.use_blitting:
             plt.pause(0.001)
 
-    @timed
+    @Runner.timed
     def take_picture(self):
         return self.camera.take_picture()
 
-    @timed
+    @Runner.timed
     def update_backlight_image(self, backlight_image):
         refresh_func = update_image(self.backlight_ax, self.backlight_img, backlight_image, self.backlight_background, self.use_blitting, refresh_now=not self.refresh_together)
         if refresh_func:
             self._refresh_funcs.append(refresh_func)
 
-    @timed
+    @Runner.timed
     def maybe_show_camera(self, frame):
         if self.show_camera:
             refresh_func = update_image(self.camera_axs[0], self.camera_imgs[0], frame, self.camera_backgrounds[0], self.use_blitting, refresh_now=not self.refresh_together)
@@ -180,23 +209,23 @@ class ShadowRunner:
     def _detect_from_diff(self, diff_image):
         return diff_image[:, :, 0] > 60
 
-    @timed
+    @Runner.timed
     def detect(self, frame):
         return self._detect_from_diff(subtract_images(self.camera_initial_frame, frame))
 
-    @timed
+    @Runner.timed
     def adjust_detection_mask(self, detection_mask):
         if self.smoothing:
             return cv2.blur(detection_mask.astype(np.float32), (5, 5)) > 0.1
         return detection_mask
 
-    @timed
+    @Runner.timed
     def build_shadow_image(self, detected_mask):
         shadow_image_on_camera = self.camera_detection_image.copy()
         shadow_image_on_camera[detected_mask] = self.SHADOW_COLOR
         return shadow_image_on_camera
 
-    @timed
+    @Runner.timed
     def maybe_show_detection_mask(self, detection_mask):
         if self.show_detection:
             refresh_func = update_image(self.camera_axs[1], self.camera_imgs[1], detection_mask * 255, self.camera_backgrounds[1], self.use_blitting, refresh_now=not self.refresh_together)
@@ -207,17 +236,12 @@ class ShadowRunner:
         return self.mapping.map_camera_image_to_screen_image(
             detection_mask.astype(np.uint8), self.backlight_image_size[::-1]).astype(bool)
 
-    @timed
+    @Runner.timed
     def map_to_screen(self, detection_mask):
         detection_mask_on_screen = self._map_detection_mask_to_screen(detection_mask)
         backlight_image = self.backlight_bgd_image.copy()
         backlight_image[detection_mask_on_screen] = self.SHADOW_COLOR
         return backlight_image
-
-    def maybe_print_timers(self, i):
-        if (i + 1) % 100 == 0 and self.print_timers:
-            print('\n')
-            timers.print_all_timers()
 
 
 def main():
