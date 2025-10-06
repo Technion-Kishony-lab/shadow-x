@@ -33,9 +33,9 @@ def wait_for_keypress(fig, options=('y', 'n')) -> str:
     return key_pressed
 
 
-def capture_background(ax):
+def capture_background_for_bliting(fig):
     """Capture the initial background for blitting"""
-    return ax.figure.canvas.copy_from_bbox(ax.bbox)
+    return fig.canvas.copy_from_bbox(fig.bbox)
 
 
 def update_image(ax, img, image: np.ndarray, background, blitting: bool, refresh_now: bool = True):

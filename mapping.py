@@ -16,6 +16,15 @@ class Mapping:
         pass
 
     def map_camera_image_to_screen_image(self, camera_image, output_size):
+        # convert bool image to uint8:
+        if camera_image.dtype == bool:
+            camera_image = camera_image.astype(np.uint8)
+        result = self._map_camera_image_to_screen_image(camera_image, output_size)
+        if camera_image.dtype == bool:
+            result = result.astype(bool)
+        return result
+
+    def _map_camera_image_to_screen_image(self, camera_image, output_size):
         pass
     
     def calculate_accuracy(self, expected_screen_points, mapped_screen_points):
@@ -69,9 +78,8 @@ class HomographyMapping(Mapping):
         screen_points = screen_points_homogeneous[:, :2] / screen_points_homogeneous[:, 2:3]
         return screen_points
 
-    def map_camera_image_to_screen_image(self, camera_image, output_size):
-        screen_image = cv2.warpPerspective(camera_image, self.mapping, output_size)
-        return screen_image
+    def _map_camera_image_to_screen_image(self, camera_image, output_size):
+        return cv2.warpPerspective(camera_image, self.mapping, output_size)
 
 
 class PolynomialWarpMapping(Mapping):
