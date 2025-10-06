@@ -1,10 +1,10 @@
+from typing import Type
 import cv2
 import numpy as np
 
 from graphics.helpers import subtract_images, wait_for_keypress
 from graphics.patterns import get_array_of_circles_image
-from mapping import HomographyMapping as Mapping
-# from mapping import PolynomialWarpMapping as Mapping
+from mapping import HomographyMapping, Mapping
 from resources import get_backlight_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
     set_background_image, illuminate, get_backlight_image_size, set_camera_display_image
 
@@ -39,7 +39,7 @@ def get_centers_on_screen_and_camera(num_tile_rows):
     return centers_on_screen, centers_on_camera, image_size, diff_image
 
 
-def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
+def register_screen_camera(num_tile_rows=10, display=True, mapping_class: Type[Mapping] = HomographyMapping) -> Mapping:
     """
     Register the screen positions on the camera using a circles grid pattern.
     Parameters
@@ -50,6 +50,8 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
     display : bool or None
         If True, display the mapping and ask the user to verify it.
         If False, do not display the mapping, unless fail to detect the pattern.
+    mapping_class : class
+        The Mapping subclass to use for registration.
     """
 
     ax_bgd = get_backlight_axes()
@@ -59,7 +61,7 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
         centers_on_screen, centers_on_camera, image_size, diff_image = get_centers_on_screen_and_camera(num_tile_rows)
 
         if centers_on_camera is not None:
-            mapping = Mapping.from_matching_points(
+            mapping = mapping_class.from_matching_points(
                 centers_on_screen, 
                 centers_on_camera,
                 image_size=image_size
