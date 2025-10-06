@@ -2,7 +2,6 @@ import argparse
 import time
 import cv2
 import numpy as np
-from PIL.PdfParser import decode_text
 
 from matplotlib import pyplot as plt
 from graphics.helpers import beep, subtract_images
@@ -16,7 +15,6 @@ from graphics.helpers import update_image, capture_background_for_bliting
 from timers import Timer
 
 
-
 def build_args_parser():
     parser = argparse.ArgumentParser(description="Shadow occlusion visualizer")
     parser.add_argument("--iterations", type=int, default=5000)
@@ -28,7 +26,6 @@ def build_args_parser():
     parser.add_argument("--save-mapping", type=str, help="File path to save the mapping.")
     parser.add_argument("--load-mapping", type=str, help="File path to load the mapping from.")
     return parser
-
 
 
 class Runner:
@@ -51,10 +48,11 @@ class Runner:
         def wrapper(self, *args, **kwargs):
             with self.get_timer(func.__name__):
                 return func(self, *args, **kwargs)
+
         return wrapper
 
     def _setup(self):
-        raise NotImplementedError("Subclasses should implement this!")
+        raise NotImplementedError
 
     def _after_setup(self):
         pass
@@ -64,13 +62,23 @@ class Runner:
         self._after_setup()
         with Timer("Entire run") as timer:
             for i in range(self.iterations):
-                with self.get_timer("all"):
-                    self._run_iteration(i)
+                self._run_iteration(i)
         return timer.get_avg_time()
 
     @timed
     def _run_iteration(self, i):
-        raise NotImplementedError("Subclasses should implement this!")
+        self._start_iteration(i)
+        self._do_iteration(i)
+        self._end_iteration(i)
+
+    def _start_iteration(self, i):
+        pass
+
+    def _do_iteration(self, i):
+        raise NotImplementedError
+
+    def _end_iteration(self, i):
+        self.maybe_print_timers(i)
 
     def maybe_print_timers(self, i):
         if (i + 1) % 100 == 0 and self.print_timers:
@@ -79,10 +87,10 @@ class Runner:
 
 
 class MappingRunner(Runner):
-
     MAPPING_CLASS = HomographyMapping
+
     def __init__(self, iterations=5000, print_timers=True, registration_grid=10,
-                    mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None):
+                 mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None):
         super().__init__(iterations, print_timers)
         self.registration_grid = registration_grid
         self.mapping_filepath = mapping_filepath
@@ -95,7 +103,6 @@ class MappingRunner(Runner):
 
     def _setup_mapping(self):
         self.backlight_image_size = get_backlight_image_size()
-        self.camera_image_size = get_overhead_camera().get_resolution()
         mapping = None
         if self.load_mapping is not False:
             try:
@@ -127,8 +134,8 @@ class CameraScreenRunner(MappingRunner):
     BACKGROUND_COLOR = (255, 255, 255)
 
     def __init__(self, iterations=5000, print_timers=True, registration_grid=10,
-                    mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None, show_camera=False,
-                    use_blitting=True, refresh_together=True):
+                 mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None, show_camera=False,
+                 use_blitting=True, refresh_together=True):
         super().__init__(iterations, print_timers, registration_grid, mapping_filepath, load_mapping, save_mapping)
         self.show_camera = show_camera
         self.use_blitting = use_blitting
@@ -138,8 +145,7 @@ class CameraScreenRunner(MappingRunner):
         self.backlight_bgd_image = self._get_bgd_image()
         self.backlight_ax, self.backlight_img = set_backlight_image(self.backlight_bgd_image, pause=1)
         self.backlight_fig = self.backlight_ax.figure
-        self.backlight_background = capture_background_for_bliting(self.backlight_fig)
-        plt.show(block=False)
+        self.backlight_bliting_background = capture_background_for_bliting(self.backlight_fig)
 
     def _get_bgd_image(self):
         img = np.zeros((self.backlight_image_size[0], self.backlight_image_size[1], 3), dtype=np.uint8)
@@ -155,7 +161,6 @@ class CameraScreenRunner(MappingRunner):
     def _setup_camera(self):
         self.camera = get_overhead_camera()
         self.camera_initial_frame = self.camera.take_picture()
-        self.camera_detection_image = np.zeros((self.camera_initial_frame.shape[:2]), dtype=np.uint8)
 
         # Setup camera display axes and images for blitting
         self.camera_axs = {}
@@ -173,15 +178,19 @@ class CameraScreenRunner(MappingRunner):
         self._setup_display()
         self._setup_camera()
 
-    def _run_iteration(self, i):
+    def _start_iteration(self, i):
+        super()._start_iteration(i)
         self._refresh_funcs = []
+
+    def _end_iteration(self, i):
+        super()._end_iteration(i)
+        self.refresh_all()
 
     @Runner.timed
     def refresh_all(self):
         for refresh_func in self._refresh_funcs:
             refresh_func()
         if not self.use_blitting:
-            plt.draw()
             plt.pause(0.001)
 
     @Runner.timed
@@ -195,12 +204,13 @@ class CameraScreenRunner(MappingRunner):
             if result is not None:
                 self._refresh_funcs.append(result)
             return result
+
         return wrapper
 
     @Runner.timed
     @collect_refresh
     def update_backlight_image(self, backlight_image):
-        return update_image(self.backlight_ax, self.backlight_img, backlight_image, self.backlight_background,
+        return update_image(self.backlight_ax, self.backlight_img, backlight_image, self.backlight_bliting_background,
                             self.use_blitting, refresh_now=not self.refresh_together)
 
     @Runner.timed
@@ -247,19 +257,14 @@ class ShadowRunner(CameraScreenRunner):
             initial_frames.append(np.zeros_like(self.camera_initial_frame[:, :, 0], dtype=np.uint8))
         return initial_frames
 
-    def _run_iteration(self, i):
-        super()._run_iteration(i)
+    def _do_iteration(self, i):
         frame = self.take_picture()
         self.maybe_show_camera(frame)
         detection_mask = self.detect(frame)
-        detection_mask = np.random.rand(*detection_mask.shape) < 0.01
         detection_mask = self.adjust_detection_mask(detection_mask)
         self.maybe_show_detection_mask(detection_mask)
         screen_image = self.map_to_screen(detection_mask)
         self.update_backlight_image(screen_image)
-        self.refresh_all()
-
-        self.maybe_print_timers(i)
 
     # --- timed helpers ---
 
@@ -280,7 +285,8 @@ class ShadowRunner(CameraScreenRunner):
     @CameraScreenRunner.collect_refresh
     def maybe_show_detection_mask(self, detection_mask):
         if self.show_detection:
-            return update_image(self.camera_axs[1], self.camera_imgs[1], detection_mask * 255, self.camera_backgrounds[1], self.use_blitting, refresh_now=not self.refresh_together)
+            return update_image(self.camera_axs[1], self.camera_imgs[1], detection_mask * 255,
+                                self.camera_backgrounds[1], self.use_blitting, refresh_now=not self.refresh_together)
 
     @Runner.timed
     def map_to_screen(self, detection_mask):
@@ -304,16 +310,14 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    ShadowRunner(show_camera=False, show_detection=False, use_blitting=False,
-                     refresh_together=False,
-                     iterations=101, save_mapping=None, load_mapping=None).run()
-    # print(f"{'show_camera':<12} {'use_blitting':<13} {'refresh_together':<16} {'time':<8}")
-    # print("-" * 70)
-    # for show_camera in [True, False]:
-    #         for use_blitting in [True, False]:
-    #             for refresh_together in [True, False]:
-    #                 t = ShadowRunner(show_camera=show_camera, show_detection=show_camera, use_blitting=use_blitting, refresh_together=refresh_together,
-    #                              iterations=101, save_mapping=None, load_mapping=None).run()
-    #                 print(f"{str(show_camera):<12} {str(use_blitting):<13} {str(refresh_together):<16} {t:<8.3f}")
-    #                 beep(frequency=1000, duration=0.1)
-    #                 time.sleep(0.1)
+    print(f"{'show_camera':<12} {'use_blitting':<13} {'refresh_together':<16} {'time':<8}")
+    print("-" * 70)
+    for show_camera in [True, False]:
+        for use_blitting in [True, False]:
+            for refresh_together in [True, False]:
+                t = ShadowRunner(show_camera=show_camera, show_detection=show_camera, use_blitting=use_blitting,
+                                 refresh_together=refresh_together,
+                                 iterations=11, save_mapping=None, load_mapping=None).run()
+                print(f"{str(show_camera):<12} {str(use_blitting):<13} {str(refresh_together):<16} {t:<8.3f}")
+                beep(frequency=1000, duration=0.1)
+                time.sleep(0.1)

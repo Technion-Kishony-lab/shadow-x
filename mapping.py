@@ -17,10 +17,11 @@ class Mapping:
 
     def map_camera_image_to_screen_image(self, camera_image, output_size):
         # convert bool image to uint8:
-        if camera_image.dtype == bool:
+        is_bool = camera_image.dtype == bool
+        if is_bool:
             camera_image = camera_image.astype(np.uint8)
         result = self._map_camera_image_to_screen_image(camera_image, output_size)
-        if camera_image.dtype == bool:
+        if is_bool:
             result = result.astype(bool)
         return result
 
@@ -125,7 +126,7 @@ class PolynomialWarpMapping(Mapping):
         y_mapped = terms @ self.coeffs_y
         return np.column_stack([x_mapped, y_mapped])
 
-    def map_camera_image_to_screen_image(self, camera_image, output_size):
+    def _map_camera_image_to_screen_image(self, camera_image, output_size):
         """
         Warp image using inverse mapping + interpolation.
         For each screen pixel, find the corresponding camera pixel.
