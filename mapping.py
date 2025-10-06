@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pickle
 
 
 class Mapping:
@@ -24,6 +25,21 @@ class Mapping:
         """
         distances = np.linalg.norm(mapped_screen_points - expected_screen_points, axis=1)
         return distances.mean()
+
+    def save_mapping(self, file_path):
+        """
+        Save the mapping data to a file, including the class type.
+        """
+        with open(file_path, 'wb') as f:
+            pickle.dump(self, f)
+
+    @staticmethod
+    def load_mapping(file_path):
+        """
+        Load the mapping data from a file using the saved class type.
+        """
+        with open(file_path, 'rb') as f:
+            return pickle.load(f)
 
 
 class HomographyMapping(Mapping):

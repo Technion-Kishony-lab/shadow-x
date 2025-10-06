@@ -6,7 +6,7 @@ from graphics.helpers import subtract_images, wait_for_keypress
 from graphics.patterns import get_array_of_circles_image
 from mapping import HomographyMapping, Mapping
 from resources import get_backlight_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
-    set_background_image, illuminate, get_backlight_image_size, set_camera_display_image
+    set_backlight_image, illuminate, get_backlight_image_size, set_camera_display_image
 
 set_matplotlib_backend()
 
@@ -22,7 +22,7 @@ def get_diff_image(num_tile_rows):
     image_with_circles, xs, ys = get_array_of_circles_image(size=get_backlight_image_size(), num_rows=num_tile_rows)
     illuminate(color=(0, 0, 0), pause=0.5)
     image0 = camera.take_picture()
-    set_background_image(image_with_circles, pause=0.5)
+    set_backlight_image(image_with_circles, pause=0.5)
     image1 = camera.take_picture()
 
     diff_image = subtract_images(image1, image0, as_gray=True, as_uint8=True)

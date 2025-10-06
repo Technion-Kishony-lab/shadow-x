@@ -7,7 +7,7 @@ import timers
 from graphics.helpers import subtract_images
 from register import register_screen_camera
 from resources import set_matplotlib_backend, get_overhead_camera, \
-    illuminate, set_camera_display_image, set_background_image, get_backlight_image_size
+    illuminate, set_camera_display_image, set_backlight_image, get_backlight_image_size
 
 BACKGROUND_COLOR = (255, 255, 255)
 SHADOW_COLOR = (255, 0, 0)

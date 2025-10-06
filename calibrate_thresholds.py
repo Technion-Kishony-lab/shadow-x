@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 from graphics.helpers import subtract_images, wait_for_keypress
 from resources import set_matplotlib_backend, get_overhead_camera, \
-    illuminate, set_camera_display_image, set_background_image, get_backlight_image_size, get_camera_display_axes
+    illuminate, set_camera_display_image, set_backlight_image, get_backlight_image_size, get_camera_display_axes
 
 BACKGROUND_COLOR = (255, 255, 255)
 SHADOW_COLOR = (255, 0, 0)
@@ -29,7 +29,7 @@ x, y = np.indices((bgd_image_size[0], bgd_image_size[1]))
 stripe_image[(y // stripe_height) % 2 == 0] = BACKGROUND_COLOR
 stripe_image[(y // stripe_height) % 2 == 1] = SHADOW_COLOR
 
-set_background_image(stripe_image, pause=1)
+set_backlight_image(stripe_image, pause=1)
 image0 = camera.take_picture()
 ax, img = set_camera_display_image(image0, index=0)
 # add countour of mask:

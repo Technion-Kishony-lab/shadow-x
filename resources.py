@@ -56,7 +56,7 @@ def set_axes_image(ax, image: np.ndarray):
     return img
 
 
-def set_background_image(image: np.ndarray, pause=0):
+def set_backlight_image(image: np.ndarray, pause=0):
     ax = get_backlight_axes()
     img = set_axes_image(ax, image)
     if pause:
@@ -76,4 +76,4 @@ def illuminate(color=(255, 255, 255), pause=1):
     size = get_backlight_image_size()
     background_image = np.zeros((size[0], size[1], 3), dtype=np.uint8)
     background_image[:, :] = color
-    return set_background_image(background_image, pause=pause)
+    return set_backlight_image(background_image, pause=pause)
