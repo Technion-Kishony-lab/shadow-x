@@ -7,7 +7,7 @@ import timers
 from graphics.helpers import subtract_images
 from register import register_screen_camera
 from resources import set_matplotlib_backend, get_overhead_camera, \
-    illuminate, set_camera_display_image, set_background_image, get_background_image_size
+    illuminate, set_camera_display_image, set_background_image, get_backlight_image_size
 
 BACKGROUND_COLOR = (255, 255, 255)
 SHADOW_COLOR = (255, 0, 0)
@@ -30,7 +30,7 @@ empty_background_image_on_camera[:, :] = BACKGROUND_COLOR
 ax, img = illuminate(color=BACKGROUND_COLOR, pause=1)
 fig = ax.figure
 image0 = camera.take_picture()
-bgd_image_size = get_background_image_size()
+bgd_image_size = get_backlight_image_size()
 
 # Setup matplotlib figure for blitting
 plt.show(block=False)

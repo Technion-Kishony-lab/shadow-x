@@ -18,7 +18,7 @@ def get_overhead_camera() -> Camera:
     return get_or_create_camera(**OVERHEAD_CAMERA)
 
 
-def get_background_axes() -> Axes:
+def get_backlight_axes() -> Axes:
     fig, ax = get_or_create_named_figure("background", screen=BACKGROUND_SCREEN, is_image=True, remove_toolbar=True)
     return ax
 
@@ -38,8 +38,8 @@ def get_camera_display_axes(index=0) -> Axes:
     return ax
 
 
-def get_background_image_size():
-    ax = get_background_axes()
+def get_backlight_image_size():
+    ax = get_backlight_axes()
     ax_size = get_axes_size_in_pixels(ax)
     image_size = ax_size // BACKGROUND_SCREEN_BIN_SIZE
     return image_size
@@ -57,21 +57,23 @@ def set_axes_image(ax, image: np.ndarray):
 
 
 def set_background_image(image: np.ndarray, pause=0):
-    ax = get_background_axes()
+    ax = get_backlight_axes()
     img = set_axes_image(ax, image)
     if pause:
         plt.pause(pause)
     return ax, img
 
 
-def set_camera_display_image(image: np.ndarray, index=0):
+def set_camera_display_image(image: np.ndarray, index=0, pause=0):
     ax = get_camera_display_axes(index)
     img = set_axes_image(ax, image)
+    if pause:
+        plt.pause(pause)
     return ax, img
 
 
 def illuminate(color=(255, 255, 255), pause=1):
-    size = get_background_image_size()
+    size = get_backlight_image_size()
     background_image = np.zeros((size[0], size[1], 3), dtype=np.uint8)
     background_image[:, :] = color
     return set_background_image(background_image, pause=pause)

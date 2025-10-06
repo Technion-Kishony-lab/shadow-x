@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 from graphics.helpers import subtract_images, wait_for_keypress
 from resources import set_matplotlib_backend, get_overhead_camera, \
-    illuminate, set_camera_display_image, set_background_image, get_background_image_size, get_camera_display_axes
+    illuminate, set_camera_display_image, set_background_image, get_backlight_image_size, get_camera_display_axes
 
 BACKGROUND_COLOR = (255, 255, 255)
 SHADOW_COLOR = (255, 0, 0)
@@ -13,7 +13,7 @@ set_matplotlib_backend()
 
 camera = get_overhead_camera()
 
-bgd_image_size = get_background_image_size()
+bgd_image_size = get_backlight_image_size()
 
 # find the screen pixels:
 illuminate(color=(0, 0, 0), pause=1)

@@ -1,25 +1,25 @@
 import cv2
 import numpy as np
-import pickle
 
 from graphics.helpers import subtract_images, wait_for_keypress
 from graphics.patterns import get_array_of_circles_image
-# from mapping import HomographyMapping as Mapping
-from mapping import PolynomialWarpMapping as Mapping
-from resources import get_background_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
-    set_background_image, illuminate, get_background_image_size, set_camera_display_image
+from mapping import HomographyMapping as Mapping
+# from mapping import PolynomialWarpMapping as Mapping
+from resources import get_backlight_axes, get_overhead_camera, set_matplotlib_backend, get_camera_display_axes, \
+    set_background_image, illuminate, get_backlight_image_size, set_camera_display_image
 
 set_matplotlib_backend()
 
 def find_circles_grid(diff_image, size):
     ret, centers_on_camera = cv2.findCirclesGrid(255 - diff_image, size, cv2.CALIB_CB_SYMMETRIC_GRID)
-    centers_on_camera = centers_on_camera.reshape(-1, 2)
+    if ret:
+        centers_on_camera = centers_on_camera.reshape(-1, 2)
     return ret, centers_on_camera
 
 
 def get_diff_image(num_tile_rows):
     camera = get_overhead_camera()
-    image_with_circles, xs, ys = get_array_of_circles_image(size=get_background_image_size(), num_rows=num_tile_rows)
+    image_with_circles, xs, ys = get_array_of_circles_image(size=get_backlight_image_size(), num_rows=num_tile_rows)
     illuminate(color=(0, 0, 0), pause=0.5)
     image0 = camera.take_picture()
     set_background_image(image_with_circles, pause=0.5)
@@ -52,7 +52,7 @@ def register_screen_camera(num_tile_rows=10, display=True) -> Mapping:
         If False, do not display the mapping, unless fail to detect the pattern.
     """
 
-    ax_bgd = get_background_axes()
+    ax_bgd = get_backlight_axes()
 
     mapping = None
     while True:
