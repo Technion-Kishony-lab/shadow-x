@@ -27,7 +27,7 @@ class Mapping:
 
     def _map_camera_image_to_screen_image(self, camera_image, output_size):
         pass
-    
+
     def calculate_accuracy(self, expected_screen_points, mapped_screen_points):
         """
         Calculate mapping accuracy by measuring distances between mapped points and expected screen points.
@@ -103,10 +103,10 @@ class PolynomialWarpMapping(Mapping):
         # Calculate image center
         cx, cy = image_size[0] / 2, image_size[1] / 2
         image_center = (cx, cy)
-        
+
         # Convert camera points to center-relative coordinates
         camera_points_centered = camera_points - np.array([cx, cy])
-        
+
         # Build polynomial design matrix
         X = cls._polynomial_terms(camera_points_centered, degree)
 
@@ -120,7 +120,7 @@ class PolynomialWarpMapping(Mapping):
         # Convert to center-relative coordinates
         cx, cy = self.image_center
         camera_points_centered = camera_points - np.array([cx, cy])
-        
+
         terms = self._polynomial_terms(camera_points_centered, self.degree)
         x_mapped = terms @ self.coeffs_x
         y_mapped = terms @ self.coeffs_y
@@ -155,19 +155,19 @@ class PolynomialWarpMapping(Mapping):
         """
         # Start with screen coordinates as initial guess (use float for updates)
         camera_coords = screen_coords.astype(np.float64, copy=True)
-        
+
         # Iterative refinement to find inverse mapping
         for _ in range(5):  # Usually converges in 3-5 iterations
             # Map current camera coordinates to screen
             mapped_screen = self.map_camera_points_to_screen_points(camera_coords)
-            
+
             # Calculate error
             error = screen_coords.astype(np.float64) - mapped_screen
-            
+
             # Update camera coordinates based on error
             # Simple gradient descent approach
             camera_coords += error * 0.5
-            
+
         return camera_coords
 
     @staticmethod

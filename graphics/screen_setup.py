@@ -2,7 +2,6 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 from graphics.helpers import wait_for_keypress
-from resources import set_matplotlib_backend
 
 
 def get_figure_geomotry(figure):

@@ -168,7 +168,8 @@ class CameraScreenRunner(Runner):
     @Runner.timed
     @collect_refresh
     def update_backlight_image(self, backlight_image):
-        return self.backlight_screen.update_image(backlight_image, self.use_blitting, refresh_now=not self.refresh_together)
+        return self.backlight_screen.update_image(backlight_image, self.use_blitting,
+                                                  refresh_now=not self.refresh_together)
 
     @Runner.timed
     @collect_refresh
@@ -224,8 +225,6 @@ class MappingRunner(CameraScreenRunner):
         beep()
 
 
-
-
 class ShadowRunner(MappingRunner):
     SHADOW_COLOR = (255, 0, 0)
     TEXT_COLOR = (200, 200, 255)
@@ -239,8 +238,8 @@ class ShadowRunner(MappingRunner):
                  mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None,
                  show_detection=False, smoothing=False):
         super().__init__(iterations, print_timers, camera, backlight_screen,
-                            show_camera, use_blitting, refresh_together,
-                            registration_grid, mapping_filepath, load_mapping, save_mapping)
+                         show_camera, use_blitting, refresh_together,
+                         registration_grid, mapping_filepath, load_mapping, save_mapping)
         self.show_detection = show_detection
         self.smoothing = smoothing
 

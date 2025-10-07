@@ -1,6 +1,4 @@
-from matplotlib import pyplot as plt
-
-from resources import set_matplotlib_backend, get_overhead_camera
+from resources import set_matplotlib_backend
 from runners import CameraScreenRunner
 
 set_matplotlib_backend()

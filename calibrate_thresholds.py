@@ -3,7 +3,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from graphics.helpers import subtract_images, wait_for_keypress
-from resources import set_matplotlib_backend, get_overhead_camera, get_or_create_camera_figure, get_or_create_backlight_screen
+from resources import set_matplotlib_backend, get_overhead_camera, get_or_create_camera_figure, \
+    get_or_create_backlight_screen
 
 BACKGROUND_COLOR = (255, 255, 255)
 SHADOW_COLOR = (255, 0, 0)
@@ -51,7 +52,7 @@ colors = ('r', 'g', 'b')
 normalized_image = image1.astype(np.float32) / (image0.astype(np.float32) + 1)
 for i, color in enumerate(colors):
     for j in (1, 2, 3):
-        plt.subplot(3, 3, i*3 + j)
+        plt.subplot(3, 3, i * 3 + j)
         if j == 1:
             plt.hist(image0[screen_mask, i].ravel(), bins=256, color=color, label='Foreground')
             plt.xlim([0, 256])
@@ -59,6 +60,7 @@ for i, color in enumerate(colors):
             plt.hist(image1[screen_mask, i].ravel(), bins=256, color=color, label='Background')
             plt.xlim([0, 256])
         else:
-            plt.hist(np.log2(normalized_image[screen_mask, i]+0.01).ravel(), bins=256, color=color, label='Normalized')
+            plt.hist(np.log2(normalized_image[screen_mask, i] + 0.01).ravel(), bins=256, color=color,
+                     label='Normalized')
 
 plt.show()

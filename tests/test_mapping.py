@@ -1,36 +1,34 @@
 import os
-import sys
 import pickle
 import numpy as np
 import pytest
 
 from resources import get_overhead_camera, get_or_create_backlight_screen
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from register import get_diff_image, find_circles_grid
 from mapping import HomographyMapping, PolynomialWarpMapping
 
 camera = get_overhead_camera()
 screen = get_or_create_backlight_screen()
 
-
 THIS_FILE_DIR = os.path.dirname(__file__)
+
 
 class TestDataManager:
     """Helper class to manage test data capture and loading"""
-    
+
     def __init__(self, test_data_dir=os.path.join(THIS_FILE_DIR, "test_data")):
         self.test_data_dir = test_data_dir
         os.makedirs(test_data_dir, exist_ok=True)
-    
+
     @property
     def image_data_path(self):
         return os.path.join(self.test_data_dir, "image_data.pkl")
-    
+
     @property
     def mapping_data_path(self):
         return os.path.join(self.test_data_dir, "mapping_data.pkl")
-    
+
     def save_image_data(self, centers_on_screen, image_size, diff_image, xs, ys):
         """Save image and screen centers data for test_get_centers_on_screen_and_camera"""
         data = {
@@ -40,18 +38,18 @@ class TestDataManager:
             'xs': xs,
             'ys': ys
         }
-        
+
         filepath = self.image_data_path
         with open(filepath, 'wb') as f:
             pickle.dump(data, f)
         print(f"Image test data saved to {filepath}")
-    
+
     def load_image_data(self):
         """Load image and screen centers data"""
         filepath = self.image_data_path
         with open(filepath, 'rb') as f:
             return pickle.load(f)
-    
+
     def save_mapping_data(self, centers_on_screen, centers_on_camera, image_size):
         """Save mapping data for test_mapping"""
         data = {
@@ -59,18 +57,18 @@ class TestDataManager:
             'centers_on_camera': centers_on_camera,
             'image_size': image_size
         }
-        
+
         filepath = self.mapping_data_path
         with open(filepath, 'wb') as f:
             pickle.dump(data, f)
         print(f"Mapping test data saved to {filepath}")
-    
+
     def load_mapping_data(self):
         """Load mapping data"""
         filepath = self.mapping_data_path
         with open(filepath, 'rb') as f:
             return pickle.load(f)
-    
+
     def capture_image_data(self, num_tile_rows=10):
         """Capture new image data and save it"""
         print(f"Capturing new image data with {num_tile_rows} tile rows...")
@@ -94,7 +92,7 @@ class TestDataManager:
             image_data['xs'],
             image_data['ys']
         )
-    
+
     def capture_mapping_data(self, num_tile_rows=10):
         """Capture new mapping data and save it"""
         print(f"Capturing new mapping data with {num_tile_rows} tile rows...")
@@ -137,17 +135,17 @@ test_manager = TestDataManager()
 
 def test_get_centers_on_screen_and_camera():
     """Test the get_centers_on_screen_and_camera function with data capture and reuse"""
-    
+
     # Try to load existing image data first
     centers_on_screen, image_size, diff_image, xs, ys = test_manager.get_or_capture_image_data(10)
-    
+
     # Assertions - only test what this test needs
     assert centers_on_screen is not None, "Screen centers should not be None"
     assert len(centers_on_screen) > 0, "Should have detected screen centers"
     assert centers_on_screen.shape[1] == 2, "Screen centers should be 2D points"
     assert len(image_size) == 2, "Image size should be (width, height)"
     assert diff_image.ndim == 2, "Diff image should be 2D"
-    
+
     assert len(centers_on_screen) == len(xs) * len(ys), "centers_on_screen should match grid size"
     print(f"✓ Screen centers shape: {centers_on_screen.shape}")
     print(f"✓ Image size: {image_size}")
@@ -163,17 +161,17 @@ def test_get_centers_on_screen_and_camera():
 )
 def test_mapping(MappingClass, kwargs):
     """Test mapping functionality using real data for both mapping subclasses"""
-    
+
     centers_on_screen, centers_on_camera, image_size = test_manager.get_or_capture_mapping_data(10)
-    
+
     mapping = MappingClass.from_matching_points(
         centers_on_screen, centers_on_camera, image_size, **kwargs
     )
-    
+
     # Test point mapping accuracy
     mapped_points = mapping.map_camera_points_to_screen_points(centers_on_camera)
     mean_error = mapping.calculate_accuracy(centers_on_screen, mapped_points)
-    
+
     print(f"✓ {MappingClass.__name__} mean error: {mean_error:.2f} pixels")
     assert mean_error < 10.0, f"{MappingClass.__name__} error too high: {mean_error}"
 

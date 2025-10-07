@@ -116,4 +116,3 @@ def create_positioned_figure_and_axes(screen=0, figure_position="full", axes_pos
 if __name__ == "__main__":
     fig, ax = create_positioned_figure_and_axes(figure_position="full", axes_position="full", is_image=True)
     plt.show()
-    

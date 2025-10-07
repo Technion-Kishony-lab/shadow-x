@@ -7,7 +7,8 @@ from graphics.image_figure import ImageFigure
 from graphics.helpers import subtract_images, wait_for_keypress
 from graphics.patterns import get_array_of_circles_image
 from mapping import HomographyMapping, Mapping
-from resources import get_overhead_camera, set_matplotlib_backend, get_or_create_camera_figure, get_or_create_backlight_screen
+from resources import get_overhead_camera, set_matplotlib_backend, get_or_create_camera_figure, \
+    get_or_create_backlight_screen
 
 set_matplotlib_backend()
 
@@ -63,7 +64,7 @@ def register_screen_camera(camera: Camera, backlight_screen: ImageFigure, num_ti
 
         if centers_on_camera is not None:
             mapping = mapping_class.from_matching_points(
-                centers_on_screen, 
+                centers_on_screen,
                 centers_on_camera,
                 image_size=image_size
             )
