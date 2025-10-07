@@ -19,12 +19,13 @@ class ShadowRunner(MappingRunner):
                  show_camera=False, use_blitting=True, refresh_together=True,
                  registration_grid=10,
                  mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None,
-                 show_detection=False, smoothing=False):
+                 show_detection=False, detection_kwargs=None, mask_adjustment_kwargs=None):
         super().__init__(iterations, print_timers, camera, backlight_screen,
                          show_camera, use_blitting, refresh_together,
                          registration_grid, mapping_filepath, load_mapping, save_mapping)
         self.show_detection = show_detection
-        self.smoothing = smoothing
+        self.detection_kwargs = detection_kwargs if detection_kwargs is not None else {'threshold': 100}
+        self.mask_adjustment_kwargs = mask_adjustment_kwargs if mask_adjustment_kwargs is not None else {}
 
     def _get_bgd_image(self):
         img = super()._get_bgd_image()
@@ -51,15 +52,15 @@ class ShadowRunner(MappingRunner):
         frame = self.take_picture()
         self.maybe_show_camera(frame)
         detection_mask = self.detect(frame)
+        self.maybe_show_detection_mask(detection_mask, index=1)
         detection_mask = self.adjust_detection_mask(detection_mask)
-        self.maybe_show_detection_mask(detection_mask)
         screen_image = self.map_to_screen(detection_mask)
         self.update_backlight_image(screen_image)
 
     # --- timed helpers ---
 
     def _detect_from_diff(self, diff_image):
-        return diff_image[:, :, 0] > 60
+        return diff_image[:, :, 0] > self.detection_kwargs['threshold']
 
     @Runner.timed
     def detect(self, frame):
@@ -67,15 +68,13 @@ class ShadowRunner(MappingRunner):
 
     @Runner.timed
     def adjust_detection_mask(self, detection_mask):
-        if self.smoothing:
-            return cv2.blur(detection_mask.astype(np.float32), (5, 5)) > 0.1
         return detection_mask
 
     @Runner.timed
     @CameraScreenRunner.collect_refresh
-    def maybe_show_detection_mask(self, detection_mask):
+    def maybe_show_detection_mask(self, detection_mask, index=1):
         if self.show_detection:
-            return self.camera_figures[1].update_image(
+            return self.camera_figures[index].update_image(
                 (detection_mask * 255).astype(np.uint8), self.use_blitting, refresh_now=not self.refresh_together)
 
     @Runner.timed
