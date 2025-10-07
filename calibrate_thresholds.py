@@ -3,8 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from graphics.helpers import subtract_images, wait_for_keypress
-from resources import set_matplotlib_backend, get_overhead_camera, \
-    illuminate, set_camera_display_image, set_backlight_image, get_backlight_image_size, get_camera_display_axes
+from resources import set_matplotlib_backend, get_overhead_camera, get_or_create_camera_figure, get_or_create_backlight_screen
 
 BACKGROUND_COLOR = (255, 255, 255)
 SHADOW_COLOR = (255, 0, 0)
@@ -12,13 +11,15 @@ SHADOW_COLOR = (255, 0, 0)
 set_matplotlib_backend()
 
 camera = get_overhead_camera()
+screen = get_or_create_backlight_screen()
+camera_display = get_or_create_camera_figure(index=0)
 
-bgd_image_size = get_backlight_image_size()
+bgd_image_size = screen.get_recomended_image_size()
 
 # find the screen pixels:
-illuminate(color=(0, 0, 0), pause=1)
+screen.illuminate(color=(0, 0, 0), pause=1)
 image_black = camera.take_picture()
-illuminate(color=(255, 255, 255), pause=1)
+screen.illuminate(color=(255, 255, 255), pause=1)
 image_white = camera.take_picture()
 screen_mask = subtract_images(image_white, image_black, as_gray=True) > 100
 
@@ -29,19 +30,19 @@ x, y = np.indices((bgd_image_size[0], bgd_image_size[1]))
 stripe_image[(y // stripe_height) % 2 == 0] = BACKGROUND_COLOR
 stripe_image[(y // stripe_height) % 2 == 1] = SHADOW_COLOR
 
-set_backlight_image(stripe_image, pause=1)
+screen.set_image(stripe_image, pause=1)
 image0 = camera.take_picture()
-ax, img = set_camera_display_image(image0, index=0)
+camera_display.set_image(image0)
 # add countour of mask:
 plt.contour(screen_mask, colors='y', linewidths=1.5)
 
-disp_ax = get_camera_display_axes()
+disp_ax = get_or_create_camera_figure().ax
 disp_ax.set_title('Place a hand over the stripes pattern and press Enter.')
 wait_for_keypress(disp_ax.figure, options=('enter',))
 
 image1 = camera.take_picture()
 
-set_camera_display_image(image1, index=0)
+camera_display.set_image(image1)
 
 # plot histograms:
 plt.figure('Histograms')

@@ -4,14 +4,16 @@ import cv2
 import numpy as np
 
 from matplotlib import pyplot as plt
+
+from camera import Camera
 from graphics.helpers import beep, subtract_images
+from graphics.image_figure import ImageFigure
 from mapping import HomographyMapping, Mapping
 
 from register import register_screen_camera
-from resources import set_matplotlib_backend, get_overhead_camera, \
-    set_camera_display_image, get_backlight_image_size, set_backlight_image
+from resources import get_or_create_backlight_screen, get_or_create_camera_figure, \
+    set_matplotlib_backend, get_overhead_camera
 
-from graphics.helpers import update_image, capture_background_for_bliting
 from timers import Timer
 
 
@@ -89,9 +91,13 @@ class Runner:
 class MappingRunner(Runner):
     MAPPING_CLASS = HomographyMapping
 
-    def __init__(self, iterations=5000, print_timers=True, registration_grid=10,
+    def __init__(self, iterations=5000, print_timers=True,
+                 camera: Camera = None, backlight_screen: ImageFigure = None,
+                 registration_grid=10,
                  mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None):
         super().__init__(iterations, print_timers)
+        self.camera = camera if camera is not None else get_overhead_camera()
+        self.backlight_screen = backlight_screen if backlight_screen is not None else get_or_create_backlight_screen()
         self.registration_grid = registration_grid
         self.mapping_filepath = mapping_filepath
         self.load_mapping = load_mapping
@@ -102,7 +108,6 @@ class MappingRunner(Runner):
         set_matplotlib_backend()
 
     def _setup_mapping(self):
-        self.backlight_image_size = get_backlight_image_size()
         mapping = None
         if self.load_mapping is not False:
             try:
@@ -113,14 +118,16 @@ class MappingRunner(Runner):
                 else:
                     print(f"File not found: {self.load_mapping}, recreate mapping...")
         if mapping is None:
-            mapping = register_screen_camera(self.registration_grid, display=True, mapping_class=self.MAPPING_CLASS)
+            mapping = register_screen_camera(
+                self.camera, self.backlight_screen,
+                self.registration_grid, display=True, mapping_class=self.MAPPING_CLASS)
             if self.save_mapping is not False:
                 mapping.save_mapping(self.mapping_filepath)
         self.mapping = mapping
 
     def _map_camera_image_to_screen_image(self, camera_image):
         return self.mapping.map_camera_image_to_screen_image(
-            camera_image, self.backlight_image_size[::-1])
+            camera_image, self.backlight_screen.get_image_size()[1::-1])
 
     def _setup(self):
         self._setup_matplotlib()
@@ -133,22 +140,26 @@ class MappingRunner(Runner):
 class CameraScreenRunner(MappingRunner):
     BACKGROUND_COLOR = (255, 255, 255)
 
-    def __init__(self, iterations=5000, print_timers=True, registration_grid=10,
-                 mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None, show_camera=False,
-                 use_blitting=True, refresh_together=True):
-        super().__init__(iterations, print_timers, registration_grid, mapping_filepath, load_mapping, save_mapping)
+    def __init__(self,
+                 iterations=5000, print_timers=True,
+                 camera: Camera = None, backlight_screen: ImageFigure = None,
+                 registration_grid=10,
+                 mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None,
+                 show_camera=False, use_blitting=True, refresh_together=True):
+        super().__init__(iterations, print_timers,camera, backlight_screen, registration_grid,
+                         mapping_filepath, load_mapping, save_mapping)
         self.show_camera = show_camera
         self.use_blitting = use_blitting
         self.refresh_together = refresh_together
 
     def _setup_display(self):
         self.backlight_bgd_image = self._get_bgd_image()
-        self.backlight_ax, self.backlight_img = set_backlight_image(self.backlight_bgd_image, pause=1)
-        self.backlight_fig = self.backlight_ax.figure
-        self.backlight_bliting_background = capture_background_for_bliting(self.backlight_fig)
+        self.backlight_screen.set_image(self.backlight_bgd_image, pause=1)
+        self.backlight_screen.capture_background_for_bliting()
 
     def _get_bgd_image(self):
-        img = np.zeros((self.backlight_image_size[0], self.backlight_image_size[1], 3), dtype=np.uint8)
+        size = self.backlight_screen.get_recomended_image_size()
+        img = np.zeros((size[0], size[1], 3), dtype=np.uint8)
         img[:, :] = self.BACKGROUND_COLOR
         return img
 
@@ -159,19 +170,16 @@ class CameraScreenRunner(MappingRunner):
         return initial_frames
 
     def _setup_camera(self):
-        self.camera = get_overhead_camera()
         self.camera_initial_frame = self.camera.take_picture()
 
         # Setup camera display axes and images for blitting
-        self.camera_axs = {}
-        self.camera_imgs = {}
-        self.camera_backgrounds = {}
+        self.camera_figures = {}
 
         for index, img in enumerate(self._get_initial_frames()):
-            ax, img = set_camera_display_image(img, index=index, pause=0.1)
-            self.camera_axs[index] = ax
-            self.camera_imgs[index] = img
-            self.camera_backgrounds[index] = capture_background_for_bliting(ax.figure)
+            cam_figure = get_or_create_camera_figure(index)
+            cam_figure.set_image(img, allow_resize=True, pause=0.1)
+            cam_figure.capture_background_for_bliting()
+            self.camera_figures[index] = cam_figure
 
     def _setup(self):
         super()._setup()
@@ -210,15 +218,13 @@ class CameraScreenRunner(MappingRunner):
     @Runner.timed
     @collect_refresh
     def update_backlight_image(self, backlight_image):
-        return update_image(self.backlight_ax, self.backlight_img, backlight_image, self.backlight_bliting_background,
-                            self.use_blitting, refresh_now=not self.refresh_together)
+        return self.backlight_screen.update_image(backlight_image, self.use_blitting, refresh_now=not self.refresh_together)
 
     @Runner.timed
     @collect_refresh
     def maybe_show_camera(self, frame):
         if self.show_camera:
-            return update_image(self.camera_axs[0], self.camera_imgs[0], frame, self.camera_backgrounds[0],
-                                self.use_blitting, refresh_now=not self.refresh_together)
+            return self.camera_figures[0].update_image(frame, self.use_blitting, refresh_now=not self.refresh_together)
 
 
 class ShadowRunner(CameraScreenRunner):
@@ -226,23 +232,28 @@ class ShadowRunner(CameraScreenRunner):
     TEXT_COLOR = (200, 200, 255)
     TEXT = "Shadow-X"
 
-    def __init__(self, iterations=5000, show_camera=False, show_detection=False, smoothing=False,
-                 print_timers=True, registration_grid=12, use_blitting=True,
+    def __init__(self,
+                 iterations=5000, print_timers=True,
+                 camera: Camera = None, backlight_screen: ImageFigure = None,
+                 registration_grid=10,
                  mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None,
-                 refresh_together=True):
-        super().__init__(iterations, print_timers, registration_grid, mapping_filepath, load_mapping, save_mapping)
-        self.show_camera = show_camera
+                 show_camera=False, use_blitting=True, refresh_together=True,
+                    show_detection=False, smoothing=False):
+        super().__init__(
+            iterations, print_timers, camera, backlight_screen, registration_grid,
+            mapping_filepath, load_mapping, save_mapping,
+            show_camera, use_blitting, refresh_together
+        )
         self.show_detection = show_detection
         self.smoothing = smoothing
-        self.use_blitting = use_blitting
-        self.refresh_together = refresh_together
 
     def _get_bgd_image(self):
         img = super()._get_bgd_image()
+        size = img.shape[1::-1]
         cv2.putText(
             img=img,
             text=self.TEXT,
-            org=(self.backlight_image_size[0] // 12, self.backlight_image_size[1] // 2),
+            org=(size[0] // 12, size[1] // 2),
             fontFace=cv2.FONT_HERSHEY_SIMPLEX,
             fontScale=3,
             color=self.TEXT_COLOR,
@@ -285,8 +296,8 @@ class ShadowRunner(CameraScreenRunner):
     @CameraScreenRunner.collect_refresh
     def maybe_show_detection_mask(self, detection_mask):
         if self.show_detection:
-            return update_image(self.camera_axs[1], self.camera_imgs[1], detection_mask * 255,
-                                self.camera_backgrounds[1], self.use_blitting, refresh_now=not self.refresh_together)
+            return self.camera_figures[1].update_image(
+                (detection_mask * 255).astype(np.uint8), self.use_blitting, refresh_now=not self.refresh_together)
 
     @Runner.timed
     def map_to_screen(self, detection_mask):
@@ -317,6 +328,7 @@ if __name__ == "__main__":
             for refresh_together in [True, False]:
                 t = ShadowRunner(show_camera=show_camera, show_detection=show_camera, use_blitting=use_blitting,
                                  refresh_together=refresh_together,
+                                 camera=get_overhead_camera(),
                                  iterations=11, save_mapping=None, load_mapping=None).run()
                 print(f"{str(show_camera):<12} {str(use_blitting):<13} {str(refresh_together):<16} {t:<8.3f}")
                 beep(frequency=1000, duration=0.1)

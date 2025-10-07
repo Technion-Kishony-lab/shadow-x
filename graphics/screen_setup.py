@@ -1,3 +1,4 @@
+import matplotlib
 from matplotlib import pyplot as plt
 
 from graphics.helpers import wait_for_keypress
@@ -14,11 +15,11 @@ def parse_geometry(geom: str):
     return int(x), int(y), int(w), int(h)
 
 
-def get_screen_geometry(screen=0):
+def get_screen_geometry(screen=0, backend='tkagg'):
     """
     Open a figure. Ask the user to place it on the desired screen in full screen mode, then press Enter.
     """
-    set_matplotlib_backend()
+    matplotlib.use(backend)
     fig, ax = plt.subplots()
     fig.canvas.manager.set_window_title("Place me on the desired screen in full screen mode, then press Enter.")
     plt.show(block=False)

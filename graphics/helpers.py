@@ -33,33 +33,6 @@ def wait_for_keypress(fig, options=('y', 'n')) -> str:
     return key_pressed
 
 
-def capture_background_for_bliting(fig):
-    """Capture the initial background for blitting"""
-    return fig.canvas.copy_from_bbox(fig.bbox)
-
-
-def update_image(ax, img, image: np.ndarray, background, blitting: bool, refresh_now: bool = True):
-    """Update display with optional blitting for better performance"""
-    refresh_func = None
-    if blitting:
-        ax.figure.canvas.restore_region(background)  # Restore the background
-        img.set_array(image)
-        ax.draw_artist(img)
-        ax.figure.canvas.blit(ax.bbox)
-        if refresh_now:
-            ax.figure.canvas.flush_events()
-        else:
-            refresh_func = ax.figure.canvas.flush_events
-    else:
-        img.set_array(image)
-        if refresh_now:
-            ax.figure.canvas.draw()
-        else:
-            refresh_func = ax.figure.canvas.draw_idle
-
-    return refresh_func
-
-
 def beep(frequency=880, duration=0.05, samplerate=44100, amplitude=0.3):
     t = np.linspace(0, duration, int(samplerate * duration), endpoint=False)
     wave = amplitude * np.sin(2 * np.pi * frequency * t)

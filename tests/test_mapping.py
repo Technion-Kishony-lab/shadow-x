@@ -3,12 +3,15 @@ import sys
 import pickle
 import numpy as np
 import pytest
-import cv2
-from unittest.mock import patch, MagicMock
+
+from resources import get_overhead_camera, get_or_create_backlight_screen
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from register import get_centers_on_screen_and_camera, get_diff_image, find_circles_grid
+from register import get_diff_image, find_circles_grid
 from mapping import HomographyMapping, PolynomialWarpMapping
+
+camera = get_overhead_camera()
+screen = get_or_create_backlight_screen()
 
 
 THIS_FILE_DIR = os.path.dirname(__file__)
@@ -71,7 +74,7 @@ class TestDataManager:
     def capture_image_data(self, num_tile_rows=10):
         """Capture new image data and save it"""
         print(f"Capturing new image data with {num_tile_rows} tile rows...")
-        diff_image, xs, ys, centers_on_screen = get_diff_image(num_tile_rows)
+        diff_image, xs, ys, centers_on_screen = get_diff_image(camera, screen, num_tile_rows)
         image_size = diff_image.shape
         self.save_image_data(centers_on_screen, image_size, diff_image, xs, ys)
 
