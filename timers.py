@@ -33,4 +33,4 @@ class Timer:
         avg_time = self.get_avg_time()
         if reset:
             self.reset()
-        return f"{self.name}: {total_time:.2f}s over {count} runs, avg: {avg_time:.2f}s"
+        return f"{self.name}: {total_time:.2f}s over {count} runs, avg: {avg_time*1000:.1f} ms"

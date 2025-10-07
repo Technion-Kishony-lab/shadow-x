@@ -1,12 +1,9 @@
-import argparse
-import time
-import cv2
 import numpy as np
 
 from matplotlib import pyplot as plt
 
 from camera import Camera
-from graphics.helpers import beep, subtract_images
+from graphics.helpers import beep
 from graphics.image_figure import ImageFigure
 from mapping import HomographyMapping, Mapping
 
@@ -15,19 +12,6 @@ from resources import get_or_create_backlight_screen, get_or_create_camera_figur
     set_matplotlib_backend, get_overhead_camera
 
 from timers import Timer
-
-
-def build_args_parser():
-    parser = argparse.ArgumentParser(description="Shadow occlusion visualizer")
-    parser.add_argument("--iterations", type=int, default=5000)
-    parser.add_argument("--show-camera", action="store_true", default=False)
-    parser.add_argument("--show-shadow", action="store_true", default=False)
-    parser.add_argument("--smoothing", action="store_true", default=False)
-    parser.add_argument("--print-timers", action="store_true", default=True)
-    parser.add_argument("--registration-grid", type=int, default=12)
-    parser.add_argument("--save-mapping", type=str, help="File path to save the mapping.")
-    parser.add_argument("--load-mapping", type=str, help="File path to load the mapping from.")
-    return parser
 
 
 class Runner:
@@ -223,109 +207,3 @@ class MappingRunner(CameraScreenRunner):
 
     def _after_setup(self):
         beep()
-
-
-class ShadowRunner(MappingRunner):
-    SHADOW_COLOR = (255, 0, 0)
-    TEXT_COLOR = (200, 200, 255)
-    TEXT = "Shadow-X"
-
-    def __init__(self,
-                 iterations=5000, print_timers=True,
-                 camera: Camera = None, backlight_screen: ImageFigure = None,
-                 show_camera=False, use_blitting=True, refresh_together=True,
-                 registration_grid=10,
-                 mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None,
-                 show_detection=False, smoothing=False):
-        super().__init__(iterations, print_timers, camera, backlight_screen,
-                         show_camera, use_blitting, refresh_together,
-                         registration_grid, mapping_filepath, load_mapping, save_mapping)
-        self.show_detection = show_detection
-        self.smoothing = smoothing
-
-    def _get_bgd_image(self):
-        img = super()._get_bgd_image()
-        size = img.shape[1::-1]
-        cv2.putText(
-            img=img,
-            text=self.TEXT,
-            org=(size[0] // 12, size[1] // 2),
-            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale=3,
-            color=self.TEXT_COLOR,
-            thickness=15,
-            lineType=cv2.LINE_AA,
-        )
-        return img
-
-    def _get_initial_frames(self):
-        initial_frames = super()._get_initial_frames()
-        if self.show_detection:
-            initial_frames.append(np.zeros_like(self.camera_initial_frame[:, :, 0], dtype=np.uint8))
-        return initial_frames
-
-    def _do_iteration(self, i):
-        frame = self.take_picture()
-        self.maybe_show_camera(frame)
-        detection_mask = self.detect(frame)
-        detection_mask = self.adjust_detection_mask(detection_mask)
-        self.maybe_show_detection_mask(detection_mask)
-        screen_image = self.map_to_screen(detection_mask)
-        self.update_backlight_image(screen_image)
-
-    # --- timed helpers ---
-
-    def _detect_from_diff(self, diff_image):
-        return diff_image[:, :, 0] > 60
-
-    @Runner.timed
-    def detect(self, frame):
-        return self._detect_from_diff(subtract_images(self.camera_initial_frame, frame))
-
-    @Runner.timed
-    def adjust_detection_mask(self, detection_mask):
-        if self.smoothing:
-            return cv2.blur(detection_mask.astype(np.float32), (5, 5)) > 0.1
-        return detection_mask
-
-    @Runner.timed
-    @CameraScreenRunner.collect_refresh
-    def maybe_show_detection_mask(self, detection_mask):
-        if self.show_detection:
-            return self.camera_figures[1].update_image(
-                (detection_mask * 255).astype(np.uint8), self.use_blitting, refresh_now=not self.refresh_together)
-
-    @Runner.timed
-    def map_to_screen(self, detection_mask):
-        detection_mask_on_screen = self._map_camera_image_to_screen_image(detection_mask)
-        backlight_image = self.backlight_bgd_image.copy()
-        backlight_image[detection_mask_on_screen] = self.SHADOW_COLOR
-        return backlight_image
-
-
-def main():
-    args = build_args_parser().parse_args()
-    ShadowRunner(
-        iterations=args.iterations,
-        show_camera=args.show_camera,
-        show_detection=args.show_shadow,
-        smoothing=args.smoothing,
-        print_timers=args.print_timers,
-        registration_grid=args.registration_grid,
-    ).run()
-
-
-if __name__ == "__main__":
-    # main()
-    print(f"{'show_camera':<12} {'use_blitting':<13} {'refresh_together':<16} {'time':<8}")
-    print("-" * 70)
-    for show_camera in [True, False]:
-        for use_blitting in [True, False]:
-            for refresh_together in [True, False]:
-                t = ShadowRunner(show_camera=show_camera, show_detection=show_camera, use_blitting=use_blitting,
-                                 refresh_together=refresh_together,
-                                 camera=get_overhead_camera(),
-                                 iterations=11, save_mapping=None, load_mapping=None).run()
-                print(f"{str(show_camera):<12} {str(use_blitting):<13} {str(refresh_together):<16} {t:<8.3f}")
-                beep(frequency=1000, duration=0.1)
-                time.sleep(0.1)
