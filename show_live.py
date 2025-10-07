@@ -1,12 +1,16 @@
 from matplotlib import pyplot as plt
 
 from resources import set_matplotlib_backend, get_overhead_camera
+from runners import CameraScreenRunner
 
 set_matplotlib_backend()
 
-camera = get_overhead_camera()
 
-for i in range(5000):
-    frame = camera.take_picture()
-    set_camera_display_image(frame)
-    plt.pause(0.01)
+class LiveRunner(CameraScreenRunner):
+    def _do_iteration(self, i):
+        frame = self.take_picture()
+        self.maybe_show_camera(frame)
+
+
+if __name__ == '__main__':
+    LiveRunner(show_camera=True).run()

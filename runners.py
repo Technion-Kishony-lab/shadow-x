@@ -88,66 +88,16 @@ class Runner:
             self.print_timers_report()
 
 
-class MappingRunner(Runner):
-    MAPPING_CLASS = HomographyMapping
-
-    def __init__(self, iterations=5000, print_timers=True,
-                 camera: Camera = None, backlight_screen: ImageFigure = None,
-                 registration_grid=10,
-                 mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None):
-        super().__init__(iterations, print_timers)
-        self.camera = camera if camera is not None else get_overhead_camera()
-        self.backlight_screen = backlight_screen if backlight_screen is not None else get_or_create_backlight_screen()
-        self.registration_grid = registration_grid
-        self.mapping_filepath = mapping_filepath
-        self.load_mapping = load_mapping
-        self.save_mapping = save_mapping
-        self.mapping = None
-
-    def _setup_matplotlib(self):
-        set_matplotlib_backend()
-
-    def _setup_mapping(self):
-        mapping = None
-        if self.load_mapping is not False:
-            try:
-                mapping = Mapping.load_mapping(self.mapping_filepath)
-            except FileNotFoundError:
-                if self.load_mapping is True:
-                    raise FileNotFoundError(f"File not found: {self.load_mapping}")
-                else:
-                    print(f"File not found: {self.load_mapping}, recreate mapping...")
-        if mapping is None:
-            mapping = register_screen_camera(
-                self.camera, self.backlight_screen,
-                self.registration_grid, display=True, mapping_class=self.MAPPING_CLASS)
-            if self.save_mapping is not False:
-                mapping.save_mapping(self.mapping_filepath)
-        self.mapping = mapping
-
-    def _map_camera_image_to_screen_image(self, camera_image):
-        return self.mapping.map_camera_image_to_screen_image(
-            camera_image, self.backlight_screen.get_image_size()[1::-1])
-
-    def _setup(self):
-        self._setup_matplotlib()
-        self._setup_mapping()
-
-    def _after_setup(self):
-        beep()
-
-
-class CameraScreenRunner(MappingRunner):
+class CameraScreenRunner(Runner):
     BACKGROUND_COLOR = (255, 255, 255)
 
     def __init__(self,
                  iterations=5000, print_timers=True,
                  camera: Camera = None, backlight_screen: ImageFigure = None,
-                 registration_grid=10,
-                 mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None,
                  show_camera=False, use_blitting=True, refresh_together=True):
-        super().__init__(iterations, print_timers,camera, backlight_screen, registration_grid,
-                         mapping_filepath, load_mapping, save_mapping)
+        super().__init__(iterations, print_timers)
+        self.camera = camera if camera is not None else get_overhead_camera()
+        self.backlight_screen = backlight_screen if backlight_screen is not None else get_or_create_backlight_screen()
         self.show_camera = show_camera
         self.use_blitting = use_blitting
         self.refresh_together = refresh_together
@@ -171,18 +121,18 @@ class CameraScreenRunner(MappingRunner):
 
     def _setup_camera(self):
         self.camera_initial_frame = self.camera.take_picture()
-
-        # Setup camera display axes and images for blitting
         self.camera_figures = {}
-
         for index, img in enumerate(self._get_initial_frames()):
             cam_figure = get_or_create_camera_figure(index)
             cam_figure.set_image(img, allow_resize=True, pause=0.1)
             cam_figure.capture_background_for_bliting()
             self.camera_figures[index] = cam_figure
 
+    def _setup_matplotlib(self):
+        set_matplotlib_backend()
+
     def _setup(self):
-        super()._setup()
+        self._setup_matplotlib()
         self._setup_display()
         self._setup_camera()
 
@@ -227,7 +177,56 @@ class CameraScreenRunner(MappingRunner):
             return self.camera_figures[0].update_image(frame, self.use_blitting, refresh_now=not self.refresh_together)
 
 
-class ShadowRunner(CameraScreenRunner):
+class MappingRunner(CameraScreenRunner):
+    MAPPING_CLASS = HomographyMapping
+
+    def __init__(self,
+                 iterations=5000, print_timers=True,
+                 camera: Camera = None, backlight_screen: ImageFigure = None,
+                 show_camera=False, use_blitting=True, refresh_together=True,
+                 registration_grid=10,
+                 mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None):
+        super().__init__(iterations, print_timers, camera, backlight_screen,
+                         show_camera, use_blitting, refresh_together)
+        self.registration_grid = registration_grid
+        self.mapping_filepath = mapping_filepath
+        self.load_mapping = load_mapping
+        self.save_mapping = save_mapping
+        self.mapping = None
+
+    def _setup_mapping(self):
+        mapping = None
+        if self.load_mapping is not False:
+            try:
+                mapping = Mapping.load_mapping(self.mapping_filepath)
+            except FileNotFoundError:
+                if self.load_mapping is True:
+                    raise FileNotFoundError(f"File not found: {self.load_mapping}")
+                else:
+                    print(f"File not found: {self.load_mapping}, recreate mapping...")
+        if mapping is None:
+            mapping = register_screen_camera(
+                self.camera, self.backlight_screen,
+                self.registration_grid, display=True, mapping_class=self.MAPPING_CLASS)
+            if self.save_mapping is not False:
+                mapping.save_mapping(self.mapping_filepath)
+        self.mapping = mapping
+
+    def _map_camera_image_to_screen_image(self, camera_image):
+        return self.mapping.map_camera_image_to_screen_image(
+            camera_image, self.backlight_screen.get_image_size()[1::-1])
+
+    def _setup(self):
+        super()._setup()
+        self._setup_mapping()
+
+    def _after_setup(self):
+        beep()
+
+
+
+
+class ShadowRunner(MappingRunner):
     SHADOW_COLOR = (255, 0, 0)
     TEXT_COLOR = (200, 200, 255)
     TEXT = "Shadow-X"
@@ -235,15 +234,13 @@ class ShadowRunner(CameraScreenRunner):
     def __init__(self,
                  iterations=5000, print_timers=True,
                  camera: Camera = None, backlight_screen: ImageFigure = None,
+                 show_camera=False, use_blitting=True, refresh_together=True,
                  registration_grid=10,
                  mapping_filepath="mapping.pkl", load_mapping=None, save_mapping=None,
-                 show_camera=False, use_blitting=True, refresh_together=True,
-                    show_detection=False, smoothing=False):
-        super().__init__(
-            iterations, print_timers, camera, backlight_screen, registration_grid,
-            mapping_filepath, load_mapping, save_mapping,
-            show_camera, use_blitting, refresh_together
-        )
+                 show_detection=False, smoothing=False):
+        super().__init__(iterations, print_timers, camera, backlight_screen,
+                            show_camera, use_blitting, refresh_together,
+                            registration_grid, mapping_filepath, load_mapping, save_mapping)
         self.show_detection = show_detection
         self.smoothing = smoothing
 
