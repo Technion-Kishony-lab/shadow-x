@@ -56,6 +56,8 @@ def register_screen_camera(camera: Camera, backlight_screen: ImageFigure, camera
             mapping = mapping_class.from_matching_points(centers_on_screen, centers_on_camera, image_size=image_size)
             if not camera_display:
                 break
+        if not camera_display:
+            camera_display = create_camera_figure()
 
         camera_display.set_image(diff_image)
         disp_ax = camera_display.ax

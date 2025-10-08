@@ -35,9 +35,9 @@ class ShadowRunner(MappingRunner):
             text=self.TEXT,
             org=(size[1] // 12, size[0] // 2),
             fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-            fontScale=3,
+            fontScale=2,
             color=self.TEXT_COLOR,
-            thickness=15,
+            thickness=10,
             lineType=cv2.LINE_AA,
         )
         return img
@@ -94,5 +94,5 @@ def run_options():
 
 
 if __name__ == "__main__":
-    ShadowRunner(show_camera=True, show_detection=False,
-                 iterations=5000, save_mapping=None, load_mapping=False).run()
+    ShadowRunner(show_camera=False, show_detection=False,
+                 iterations=5000, save_mapping=None, load_mapping=None).run()

@@ -139,7 +139,7 @@ class CameraScreenRunner(Runner):
             if result is not None:
                 self._refresh_funcs.append(result)
             return result
-
+        wrapper.__name__ = func.__name__
         return wrapper
 
     @timed
@@ -186,6 +186,8 @@ class MappingRunner(CameraScreenRunner):
             mapping = register_screen_camera(
                 self.camera, self.backlight_screen, self.show_camera and self.get_camera_display(),
                 self.registration_grid, mapping_class=self.MAPPING_CLASS)
+            if mapping is None:
+                raise RuntimeError("Mapping registration failed.")
             if self.save_mapping is not False:
                 mapping.save_mapping(self.mapping_filepath)
         self.mapping = mapping

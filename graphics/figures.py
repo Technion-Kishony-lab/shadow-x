@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 
 from env import SCREENS_TO_COORDS
+from graphics.helpers import wait_for_keypress
 
 
 def set_figure_position(fig, screen=0, position="full"):
@@ -71,6 +72,16 @@ def set_figure_position(fig, screen=0, position="full"):
             window.update_idletasks()
             plt.pause(0.1)  # allow time for the window to update
         return
+
+    if "macosx" in backend:
+        # macOS backend uses native Cocoa windows, which are not easily manipulated from Python.
+        # As a workaround, we will ask the use to place the window manually.
+        plt.pause(0.1)  # allow time for the window to appear
+        print("Warning: Setting figure position is not supported on macOS with the default backend. "
+                "Please move the window manually.")
+        wait_for_keypress(fig, options=('enter',))
+        return
+
 
     # --- WXAgg backend ---
     if "wxagg" in backend:
