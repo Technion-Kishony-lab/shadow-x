@@ -7,8 +7,7 @@ from graphics.image_figure import ImageFigure
 from graphics.helpers import subtract_images, wait_for_keypress
 from graphics.patterns import get_array_of_circles_image
 from mapping import HomographyMapping, Mapping
-from resources import get_overhead_camera, set_matplotlib_backend, get_or_create_camera_figure, \
-    get_or_create_backlight_screen
+from resources import get_overhead_camera, set_matplotlib_backend, get_or_create_backlight_screen, create_camera_figure
 
 set_matplotlib_backend()
 
@@ -41,20 +40,11 @@ def get_centers_on_screen_and_camera(camera: Camera, screen: ImageFigure, num_ti
     return centers_on_screen, centers_on_camera, image_size, diff_image
 
 
-def register_screen_camera(camera: Camera, backlight_screen: ImageFigure, num_tile_rows=10, display=True,
-                           mapping_class: Type[Mapping] = HomographyMapping) -> Mapping:
+def register_screen_camera(camera: Camera, backlight_screen: ImageFigure, camera_display: ImageFigure = None,
+                           num_tile_rows=10, mapping_class: Type[Mapping] = HomographyMapping) -> Mapping:
     """
     Register the screen positions on the camera using a circles grid pattern.
     Parameters
-    ----------
-    num_tile_rows : int
-        Number of tile rows in the pattern.
-        The number of columns is determined by the aspect ratio of the background image.
-    display : bool or None
-        If True, display the mapping and ask the user to verify it.
-        If False, do not display the mapping, unless fail to detect the pattern.
-    mapping_class : class
-        The Mapping subclass to use for registration.
     """
 
     mapping = None
@@ -63,17 +53,12 @@ def register_screen_camera(camera: Camera, backlight_screen: ImageFigure, num_ti
             camera, backlight_screen, num_tile_rows)
 
         if centers_on_camera is not None:
-            mapping = mapping_class.from_matching_points(
-                centers_on_screen,
-                centers_on_camera,
-                image_size=image_size
-            )
-            if display is False:
+            mapping = mapping_class.from_matching_points(centers_on_screen, centers_on_camera, image_size=image_size)
+            if not camera_display:
                 break
 
-        disp_ax = get_or_create_camera_figure().ax
-        camera_display = get_or_create_camera_figure(index=0)
         camera_display.set_image(diff_image)
+        disp_ax = camera_display.ax
         if centers_on_camera is None:
             disp_ax.set_title("Pattern NOT detected. Press Enter to break, or adjust setup and press Space to retry.")
         else:
@@ -103,5 +88,7 @@ def register_screen_camera(camera: Camera, backlight_screen: ImageFigure, num_ti
 
 
 if __name__ == "__main__":
-    register_screen_camera(num_tile_rows=16, camera=get_overhead_camera(),
+    register_screen_camera(num_tile_rows=16,
+                           camera=get_overhead_camera(),
+                           camera_display=create_camera_figure(),
                            backlight_screen=get_or_create_backlight_screen())

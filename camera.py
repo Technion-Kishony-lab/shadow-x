@@ -73,12 +73,12 @@ class Camera:
             self._cap = None
 
 
-INDEX_TO_CAMERAS: dict[int, Camera] = {}
+INDICES_TO_CAMERAS: dict[int, Camera] = {}
 
 
 def get_or_create_camera(camera_index=0, fps=30, buffer_size=1, rotate=0, color_order=None, exposure=None) -> Camera:
-    if camera_index not in INDEX_TO_CAMERAS:
-        INDEX_TO_CAMERAS[camera_index] = Camera.create(
+    if camera_index not in INDICES_TO_CAMERAS:
+        INDICES_TO_CAMERAS[camera_index] = Camera.create(
             index=camera_index,
             fps=fps,
             buffer_size=buffer_size,
@@ -87,4 +87,4 @@ def get_or_create_camera(camera_index=0, fps=30, buffer_size=1, rotate=0, color_
             exposure=exposure
         )
 
-    return INDEX_TO_CAMERAS[camera_index]
+    return INDICES_TO_CAMERAS[camera_index]

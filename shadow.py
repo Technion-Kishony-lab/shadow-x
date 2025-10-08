@@ -5,7 +5,7 @@ import numpy as np
 from camera import Camera
 from graphics.helpers import subtract_images, beep
 from graphics.image_figure import ImageFigure
-from runners import MappingRunner, Runner, CameraScreenRunner
+from runners import MappingRunner, timed
 
 
 class ShadowRunner(MappingRunner):
@@ -62,22 +62,22 @@ class ShadowRunner(MappingRunner):
     def _detect_from_diff(self, diff_image):
         return diff_image[:, :, 0] > self.detection_kwargs['threshold']
 
-    @Runner.timed
+    @timed
     def detect(self, frame):
         return self._detect_from_diff(subtract_images(self.camera_initial_frame, frame))
 
-    @Runner.timed
+    @timed
     def adjust_detection_mask(self, detection_mask):
         return detection_mask
 
-    @Runner.timed
-    @CameraScreenRunner.collect_refresh
+    @timed
+    @MappingRunner.collect_refresh
     def maybe_show_detection_mask(self, detection_mask, index=1):
         if self.show_detection:
             return self.camera_figures[index].update_image(
                 (detection_mask * 255).astype(np.uint8), self.use_blitting, refresh_now=not self.refresh_together)
 
-    @Runner.timed
+    @timed
     def map_to_screen(self, detection_mask):
         detection_mask_on_screen = self._map_camera_image_to_screen_image(detection_mask)
         backlight_image = self.backlight_bgd_image.copy()

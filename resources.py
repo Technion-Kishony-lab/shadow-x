@@ -8,7 +8,6 @@ from camera import get_or_create_camera, Camera
 from graphics.image_figure import ImageFigure
 
 _backlight_screen: Optional[ImageFigure] = None
-_inices_to_camera_figures: dict[int, ImageFigure] = {}
 
 
 def set_matplotlib_backend():
@@ -26,13 +25,11 @@ def get_or_create_backlight_screen() -> ImageFigure:
     return _backlight_screen
 
 
-def get_or_create_camera_figure(index=0) -> ImageFigure:
-    if index not in _inices_to_camera_figures:
-        camera_resolution_pixels = get_overhead_camera().get_resolution()
-        axes_position = np.array([0.1, 0.1, 0.8, 0.85])
-        figure_position = np.array([100 + index * 100, 100, camera_resolution_pixels[0] / axes_position[3],
-                                    camera_resolution_pixels[1] / axes_position[2]]).astype(int)
-        _inices_to_camera_figures[index] = ImageFigure(screen_index=DISPLAY_SCREEN_INDEX,
-                                                       figure_position=figure_position,
-                                                       axes_position=axes_position)
-    return _inices_to_camera_figures[index]
+def create_camera_figure(index=0) -> ImageFigure:
+    camera_resolution_pixels = get_overhead_camera().get_resolution()
+    axes_position = np.array([0, 0, 1, 0.9])
+    figure_position = np.array([100 + index * 100, 100, camera_resolution_pixels[0] / axes_position[3],
+                                camera_resolution_pixels[1] / axes_position[2]]).astype(int)
+    return ImageFigure(screen_index=DISPLAY_SCREEN_INDEX,
+                       figure_position=figure_position,
+                       axes_position=axes_position)

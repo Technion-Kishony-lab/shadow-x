@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from graphics.helpers import subtract_images, wait_for_keypress
-from resources import set_matplotlib_backend, get_overhead_camera, get_or_create_camera_figure, \
+from resources import set_matplotlib_backend, get_overhead_camera, create_camera_figure, \
     get_or_create_backlight_screen
 
 BACKGROUND_COLOR = (255, 255, 255)
@@ -13,7 +13,7 @@ set_matplotlib_backend()
 
 camera = get_overhead_camera()
 screen = get_or_create_backlight_screen()
-camera_display = get_or_create_camera_figure(index=0)
+camera_display = create_camera_figure(index=0)
 
 bgd_image_size = screen.get_recomended_image_size()
 
@@ -37,7 +37,7 @@ camera_display.set_image(image0)
 # add countour of mask:
 plt.contour(screen_mask, colors='y', linewidths=1.5)
 
-disp_ax = get_or_create_camera_figure().ax
+disp_ax = camera_display.ax
 disp_ax.set_title('Place a hand over the stripes pattern and press Enter.')
 wait_for_keypress(disp_ax.figure, options=('enter',))
 

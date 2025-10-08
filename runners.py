@@ -8,10 +8,18 @@ from graphics.image_figure import ImageFigure
 from mapping import HomographyMapping, Mapping
 
 from register import register_screen_camera
-from resources import get_or_create_backlight_screen, get_or_create_camera_figure, \
+from resources import get_or_create_backlight_screen, create_camera_figure, \
     set_matplotlib_backend, get_overhead_camera
 
 from timers import Timer
+
+
+def timed(func):
+    def wrapper(self, *args, **kwargs):
+        with self.get_timer(func.__name__):
+            return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class Runner:
@@ -28,14 +36,6 @@ class Runner:
     def print_timers_report(self):
         for timer in self.timers.values():
             print(timer.report())
-
-    @staticmethod
-    def timed(func):
-        def wrapper(self, *args, **kwargs):
-            with self.get_timer(func.__name__):
-                return func(self, *args, **kwargs)
-
-        return wrapper
 
     def _setup(self):
         raise NotImplementedError
@@ -107,7 +107,7 @@ class CameraScreenRunner(Runner):
         self.camera_initial_frame = self.camera.take_picture()
         self.camera_figures = {}
         for index, img in enumerate(self._get_initial_frames()):
-            cam_figure = get_or_create_camera_figure(index)
+            cam_figure = create_camera_figure(index)
             cam_figure.set_image(img, allow_resize=True, pause=0.1)
             cam_figure.capture_background_for_bliting()
             self.camera_figures[index] = cam_figure
@@ -128,14 +128,14 @@ class CameraScreenRunner(Runner):
         super()._end_iteration(i)
         self.refresh_all()
 
-    @Runner.timed
+    @timed
     def refresh_all(self):
         for refresh_func in self._refresh_funcs:
             refresh_func()
         if not self.use_blitting:
             plt.pause(0.001)
 
-    @Runner.timed
+    @timed
     def take_picture(self):
         return self.camera.take_picture()
 
@@ -149,13 +149,13 @@ class CameraScreenRunner(Runner):
 
         return wrapper
 
-    @Runner.timed
+    @timed
     @collect_refresh
     def update_backlight_image(self, backlight_image):
         return self.backlight_screen.update_image(backlight_image, self.use_blitting,
                                                   refresh_now=not self.refresh_together)
 
-    @Runner.timed
+    @timed
     @collect_refresh
     def maybe_show_camera(self, frame):
         if self.show_camera:
@@ -191,8 +191,8 @@ class MappingRunner(CameraScreenRunner):
                     print(f"File not found: {self.load_mapping}, recreate mapping...")
         if mapping is None:
             mapping = register_screen_camera(
-                self.camera, self.backlight_screen,
-                self.registration_grid, display=True, mapping_class=self.MAPPING_CLASS)
+                self.camera, self.backlight_screen, self.show_camera and self.camera_figures[0],
+                self.registration_grid, mapping_class=self.MAPPING_CLASS)
             if self.save_mapping is not False:
                 mapping.save_mapping(self.mapping_filepath)
         self.mapping = mapping
