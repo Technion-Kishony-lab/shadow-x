@@ -27,9 +27,8 @@ def get_or_create_backlight_screen() -> ImageFigure:
 
 def create_camera_figure(index=0) -> ImageFigure:
     camera_resolution_pixels = get_overhead_camera().get_resolution()
-    axes_position = np.array([0, 0, 1, 0.9])
-    figure_position = np.array([100 + index * 100, 100, camera_resolution_pixels[0] / axes_position[3],
-                                camera_resolution_pixels[1] / axes_position[2]]).astype(int)
+    figure_position = np.array([100 + index * 100, 100, camera_resolution_pixels[0],
+                                camera_resolution_pixels[1]]).astype(int)
     return ImageFigure(screen_index=DISPLAY_SCREEN_INDEX,
                        figure_position=figure_position,
-                       axes_position=axes_position)
+                       axes_position="full")

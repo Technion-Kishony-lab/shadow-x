@@ -27,27 +27,28 @@ def set_figure_position(fig, screen=0, position="full"):
     if "qt" in backend:
         try:
             from PyQt5 import QtWidgets  # or PySide6/PySide2 if installed
-            app = QtWidgets.QApplication.instance()
-            if app is None:
-                app = QtWidgets.QApplication([])
-            screens = app.screens()
-            if screen >= len(screens):
-                raise ValueError(f"Requested screen {screen}, but only {len(screens)} available.")
-
-            geometry = screens[screen].geometry()
-            window = manager.window
-            if is_full:
-                window.setGeometry(geometry)
-                window.showFullScreen()
-            elif position is None:
-                window.show()
-            else:
-                x, y, w, h = position
-                window.setGeometry(geometry.x() + x, geometry.y() + y, w, h)
-                window.showNormal()
-            return
         except ImportError:
-            print("Qt backend active but no Qt bindings installed.")
+            raise ImportError("PyQt5 (or PySide6/PySide2) is required for setting figure position with Qt backend.")
+        app = QtWidgets.QApplication.instance()
+        if app is None:
+            app = QtWidgets.QApplication([])
+        screens = app.screens()
+        if screen >= len(screens):
+            raise ValueError(f"Requested screen {screen}, but only {len(screens)} available.")
+
+        geometry = screens[screen].geometry()
+        window = manager.window
+        if is_full:
+            window.setGeometry(geometry)
+            window.showFullScreen()
+        elif position is None:
+            window.show()
+        else:
+            x, y, w, h = position
+            window.setGeometry(geometry.x() + x, geometry.y() + y, w, h)
+            window.showNormal()
+            fig.set_size_inches(w / fig.dpi, h / fig.dpi)  # to get the internal canvas size correct
+        return
 
     # --- TkAgg backend ---
     if "tkagg" in backend:
@@ -69,13 +70,14 @@ def set_figure_position(fig, screen=0, position="full"):
             window.geometry(new_geom)
             window.update_idletasks()
             plt.pause(0.1)  # allow time for the window to update
-
-        print(f"Set window geometry to: {new_geom}, fullscreen: {is_full}")
         return
 
     # --- WXAgg backend ---
     if "wxagg" in backend:
-        import wx
+        try:
+            import wx
+        except ImportError:
+            raise ImportError("wxPython is required for setting figure position with WX backend.")
         app = wx.App(False)
         displays = [wx.Display(i) for i in range(wx.Display.GetCount())]
         if screen >= len(displays):
@@ -91,7 +93,7 @@ def set_figure_position(fig, screen=0, position="full"):
             frame.SetSize((w, h))
         return
 
-    print(f"Fullscreen/positioning not implemented for backend: {backend}")
+    raise NotImplementedError(f"Setting figure position not implemented for backend '{backend}'.")
 
 
 def create_positioned_figure_and_axes(screen=0, figure_position="full", axes_position="full", is_image=False,

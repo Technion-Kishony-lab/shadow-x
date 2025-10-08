@@ -85,11 +85,11 @@ class CameraScreenRunner(Runner):
         self.show_camera = show_camera
         self.use_blitting = use_blitting
         self.refresh_together = refresh_together
+        self.camera_displays = {}
 
     def _setup_display(self):
         self.backlight_bgd_image = self._get_bgd_image()
         self.backlight_screen.set_image(self.backlight_bgd_image, pause=1)
-        self.backlight_screen.capture_background_for_bliting()
 
     def _get_bgd_image(self):
         size = self.backlight_screen.get_recomended_image_size()
@@ -97,20 +97,13 @@ class CameraScreenRunner(Runner):
         img[:, :] = self.BACKGROUND_COLOR
         return img
 
-    def _get_initial_frames(self):
-        initial_frames = []
-        if self.show_camera:
-            initial_frames.append(self.camera_initial_frame)
-        return initial_frames
-
     def _setup_camera(self):
         self.camera_initial_frame = self.camera.take_picture()
-        self.camera_figures = {}
-        for index, img in enumerate(self._get_initial_frames()):
-            cam_figure = create_camera_figure(index)
-            cam_figure.set_image(img, allow_resize=True, pause=0.1)
-            cam_figure.capture_background_for_bliting()
-            self.camera_figures[index] = cam_figure
+
+    def get_camera_display(self, index=0):
+        if index not in self.camera_displays:
+            self.camera_displays[index] = create_camera_figure(index=index)
+        return self.camera_displays[index]
 
     def _setup_matplotlib(self):
         set_matplotlib_backend()
@@ -159,7 +152,7 @@ class CameraScreenRunner(Runner):
     @collect_refresh
     def maybe_show_camera(self, frame):
         if self.show_camera:
-            return self.camera_figures[0].update_image(frame, self.use_blitting, refresh_now=not self.refresh_together)
+            return self.get_camera_display().update_image(frame, self.use_blitting, refresh_now=not self.refresh_together)
 
 
 class MappingRunner(CameraScreenRunner):
@@ -191,7 +184,7 @@ class MappingRunner(CameraScreenRunner):
                     print(f"File not found: {self.load_mapping}, recreate mapping...")
         if mapping is None:
             mapping = register_screen_camera(
-                self.camera, self.backlight_screen, self.show_camera and self.camera_figures[0],
+                self.camera, self.backlight_screen, self.show_camera and self.get_camera_display(),
                 self.registration_grid, mapping_class=self.MAPPING_CLASS)
             if self.save_mapping is not False:
                 mapping.save_mapping(self.mapping_filepath)
@@ -202,8 +195,10 @@ class MappingRunner(CameraScreenRunner):
             camera_image, self.backlight_screen.get_image_size()[1::-1])
 
     def _setup(self):
-        super()._setup()
+        self._setup_matplotlib()
         self._setup_mapping()
+        self._setup_display()
+        self._setup_camera()
 
     def _after_setup(self):
         beep()

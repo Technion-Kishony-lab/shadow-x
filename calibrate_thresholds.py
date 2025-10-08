@@ -37,9 +37,8 @@ camera_display.set_image(image0)
 # add countour of mask:
 plt.contour(screen_mask, colors='y', linewidths=1.5)
 
-disp_ax = camera_display.ax
-disp_ax.set_title('Place a hand over the stripes pattern and press Enter.')
-wait_for_keypress(disp_ax.figure, options=('enter',))
+camera_display.set_text('Place a hand over the stripes pattern and press Enter.')
+wait_for_keypress(camera_display.fig, options=('enter',))
 
 image1 = camera.take_picture()
 

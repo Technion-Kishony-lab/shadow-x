@@ -60,11 +60,11 @@ def register_screen_camera(camera: Camera, backlight_screen: ImageFigure, camera
         camera_display.set_image(diff_image)
         disp_ax = camera_display.ax
         if centers_on_camera is None:
-            disp_ax.set_title("Pattern NOT detected. Press Enter to break, or adjust setup and press Space to retry.")
+            camera_display.set_text("Pattern NOT detected. Press Enter to break, or adjust setup and press Space to retry.")
         else:
             # plot the detected circles on the camera image:
             disp_ax.plot(centers_on_camera[:, 0], centers_on_camera[:, 1], 'rx', markersize=7)
-            disp_ax.set_title("Pattern detected. Press Enter to confirm, or adjust setup and press Space to try again.")
+            camera_display.set_text("Pattern detected. Press Enter to confirm, or adjust setup and press Space to try again.")
 
             # map the detected circles to screen coordinates:
             screen_points = mapping.map_camera_points_to_screen_points(centers_on_camera)
@@ -79,9 +79,9 @@ def register_screen_camera(camera: Camera, backlight_screen: ImageFigure, camera
             disp_ax.figure.canvas.draw()
 
         key = wait_for_keypress(disp_ax.figure, options=('enter', ' '))
-        disp_ax.cla()
+        camera_display.illuminate(color=(0, 0, 0), pause=0.1, clear=True)
         if key == 'enter':
-            backlight_screen.clear()
+            backlight_screen.illuminate(color=(0, 0, 0), pause=0.1, clear=True)
             break
 
     return mapping

@@ -42,12 +42,6 @@ class ShadowRunner(MappingRunner):
         )
         return img
 
-    def _get_initial_frames(self):
-        initial_frames = super()._get_initial_frames()
-        if self.show_detection:
-            initial_frames.append(np.zeros_like(self.camera_initial_frame[:, :, 0], dtype=np.uint8))
-        return initial_frames
-
     def _do_iteration(self, i):
         frame = self.take_picture()
         self.maybe_show_camera(frame)
@@ -74,7 +68,7 @@ class ShadowRunner(MappingRunner):
     @MappingRunner.collect_refresh
     def maybe_show_detection_mask(self, detection_mask, index=1):
         if self.show_detection:
-            return self.camera_figures[index].update_image(
+            return self.get_camera_display(index).update_image(
                 (detection_mask * 255).astype(np.uint8), self.use_blitting, refresh_now=not self.refresh_together)
 
     @timed
@@ -100,5 +94,5 @@ def run_options():
 
 
 if __name__ == "__main__":
-    ShadowRunner(show_camera=False, show_detection=False,
-                 iterations=5000, save_mapping=None, load_mapping=None).run()
+    ShadowRunner(show_camera=True, show_detection=False,
+                 iterations=5000, save_mapping=None, load_mapping=False).run()
