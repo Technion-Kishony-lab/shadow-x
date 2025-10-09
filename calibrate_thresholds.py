@@ -2,8 +2,8 @@ import numpy as np
 
 from matplotlib import pyplot as plt
 
-from graphics.helpers import subtract_images, wait_for_keypress
-from resources import set_matplotlib_backend, get_overhead_camera, create_camera_figure, \
+from graphics.helpers import subtract_images, wait_for_keypress, set_matplotlib_backend
+from resources.camera_and_screens import get_overhead_camera, create_camera_figure, \
     get_or_create_backlight_screen
 
 BACKGROUND_COLOR = (255, 255, 255)

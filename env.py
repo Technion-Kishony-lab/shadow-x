@@ -1,9 +1,9 @@
 import cv2
 
-BACKGROUND_SCREEN_INDEX = 2
-BACKGROUND_SCREEN_BIN_SIZE = 2  # binning factor for the background screen
+BACKGROUND_SCREEN_INDEX = 1
+BACKGROUND_SCREEN_BIN_SIZE = 1  # binning factor for the background screen
 
-DISPLAY_SCREEN_INDEX = 1
+DISPLAY_SCREEN_INDEX = 2
 
 OVERHEAD_CAMERA = {
     'camera_index': 0,

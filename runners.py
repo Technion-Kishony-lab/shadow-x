@@ -4,16 +4,17 @@ import numpy as np
 
 from matplotlib import pyplot as plt
 
-from camera import Camera
-from graphics.helpers import beep
+from resources.camera import Camera
+from utils.sounds import beep
 from graphics.image_figure import ImageFigure
-from mapping import HomographyMapping, Mapping
+from mapping.mapping import HomographyMapping, Mapping
 
-from register import register_screen_camera
-from resources import get_or_create_backlight_screen, create_camera_figure, \
-    set_matplotlib_backend, get_overhead_camera
+from mapping.register import register_screen_camera
+from resources.camera_and_screens import get_or_create_backlight_screen, create_camera_figure, \
+    get_overhead_camera
+from graphics.helpers import set_matplotlib_backend
 
-from timers import Timer
+from utils.timers import Timer
 
 
 def timed(func):

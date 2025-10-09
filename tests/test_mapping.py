@@ -5,7 +5,7 @@ import pytest
 
 from resources import get_overhead_camera, get_or_create_backlight_screen
 
-from register import get_diff_image, find_circles_grid
+from mapping.register import get_diff_image, find_circles_grid
 from mapping import HomographyMapping, PolynomialWarpMapping
 
 camera = get_overhead_camera()

@@ -2,12 +2,13 @@ from typing import Type
 import cv2
 import numpy as np
 
-from camera import Camera
+from resources.camera import Camera
 from graphics.image_figure import ImageFigure
-from graphics.helpers import subtract_images, wait_for_keypress
-from graphics.patterns import get_array_of_circles_image
-from mapping import HomographyMapping, Mapping
-from resources import get_overhead_camera, set_matplotlib_backend, get_or_create_backlight_screen, create_camera_figure
+from graphics.helpers import subtract_images, wait_for_keypress, set_matplotlib_backend
+from graphics.patterns import get_grid_circles_image
+from mapping.mapping import HomographyMapping, Mapping
+from resources.camera_and_screens import (get_overhead_camera, get_or_create_backlight_screen,
+                                          create_camera_figure)
 
 set_matplotlib_backend()
 
@@ -20,7 +21,7 @@ def find_circles_grid(diff_image, size):
 
 
 def get_diff_image(camera: Camera, screen: ImageFigure, num_tile_rows):
-    image_with_circles, xs, ys = get_array_of_circles_image(size=screen.get_image_size(), num_rows=num_tile_rows)
+    image_with_circles, xs, ys = get_grid_circles_image(size=screen.get_image_size(), num_rows=num_tile_rows)
     screen.illuminate(color=(0, 0, 0), pause=0.5)
     image0 = camera.take_picture()
     screen.set_image(image_with_circles, pause=0.5)

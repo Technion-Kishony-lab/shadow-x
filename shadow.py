@@ -2,8 +2,9 @@ import time
 import cv2
 import numpy as np
 
-from camera import Camera
-from graphics.helpers import subtract_images, beep
+from resources.camera import Camera
+from graphics.helpers import subtract_images
+from utils.sounds import beep
 from graphics.image_figure import ImageFigure
 from runners import MappingRunner, timed
 

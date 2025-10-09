@@ -1,12 +1,13 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from camera import Camera
-from find_phase import cyclic_true_center_last_axis
+from graphics.patterns import get_stripes_image
+from resources.camera import Camera
+from utils.find_phase import cyclic_true_center_last_axis
 from graphics.helpers import subtract_images
 from graphics.image_figure import ImageFigure
 from runners import CameraScreenRunner
-from resources import create_camera_figure
+from resources.camera_and_screens import create_camera_figure
 
 """
 Illumination pattern for stripe stitching.
@@ -74,14 +75,10 @@ class StripeRunner(CameraScreenRunner):
             self.images.append(image)
 
     def _generate_illumination_pattern(self, frame_index: int):
+        phase = frame_index / self.num_images
         size = self.backlight_screen.get_recomended_image_size()
-        i, j = np.indices((size[0], size[1]))
-        stripe_period = self.light_width + self.dark_width
-        mask = ((j + stripe_period * frame_index / self.num_images) % stripe_period) < self.light_width
-        pattern = np.zeros((size[0], size[1], 3), dtype=np.uint8)
-        pattern[~mask] = self.BACKGROUND_COLOR
-        pattern[mask] = self.STRIPES_COLOR
-        return pattern
+        return get_stripes_image(light_width=self.light_width, dark_width=self.dark_width, phase=phase, size=size,
+                                 stripes_color=self.STRIPES_COLOR, background_color=self.BACKGROUND_COLOR)
 
     def run(self):
         super().run()

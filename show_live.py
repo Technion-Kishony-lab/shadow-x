@@ -1,4 +1,4 @@
-from resources import set_matplotlib_backend
+from graphics.helpers import set_matplotlib_backend
 from runners import CameraScreenRunner
 
 set_matplotlib_backend()

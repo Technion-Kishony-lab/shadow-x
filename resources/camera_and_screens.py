@@ -1,17 +1,12 @@
 from typing import Optional
 
-import matplotlib
 import numpy as np
 
-from env import BACKGROUND_SCREEN_INDEX, DISPLAY_SCREEN_INDEX, OVERHEAD_CAMERA, BACKEND, BACKGROUND_SCREEN_BIN_SIZE
-from camera import get_or_create_camera, Camera
+from env import BACKGROUND_SCREEN_INDEX, DISPLAY_SCREEN_INDEX, OVERHEAD_CAMERA, BACKGROUND_SCREEN_BIN_SIZE
+from resources.camera import get_or_create_camera, Camera
 from graphics.image_figure import ImageFigure
 
 _backlight_screen: Optional[ImageFigure] = None
-
-
-def set_matplotlib_backend():
-    matplotlib.use(BACKEND)
 
 
 def get_overhead_camera() -> Camera:
