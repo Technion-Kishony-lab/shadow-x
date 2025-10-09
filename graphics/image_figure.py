@@ -37,6 +37,7 @@ class ImageFigure:
             self.canvas.draw()
         if pause:
             plt.pause(pause)
+        return self.image
 
     def set_text(self, txt: str = "", pause=0, draw=True):
         if self.text is not None:

@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -100,7 +102,7 @@ class CameraScreenRunner(Runner):
     def _setup_camera(self):
         self.camera_initial_frame = self.camera.take_picture()
 
-    def get_camera_display(self, index=0):
+    def get_camera_display(self, index=0) -> ImageFigure:
         if index not in self.camera_displays:
             self.camera_displays[index] = create_camera_figure(index=index)
         return self.camera_displays[index]
@@ -170,7 +172,7 @@ class MappingRunner(CameraScreenRunner):
         self.mapping_filepath = mapping_filepath
         self.load_mapping = load_mapping
         self.save_mapping = save_mapping
-        self.mapping = None
+        self.mapping: Optional[Mapping] = None
 
     def _setup_mapping(self):
         mapping = None
