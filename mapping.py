@@ -28,6 +28,27 @@ class Mapping:
     def _map_camera_image_to_screen_image(self, camera_image, output_size):
         pass
 
+    def map_screen_image_to_camera_image(self, screen_image, camera_size):
+        """
+        Map a screen image back to camera image using inverse mapping.
+        This is implemented only for PolynomialWarpMapping.
+        """
+        # Convert to center-relative coordinates
+        w, h = camera_size
+
+        # Create a grid of camera coordinates
+        xv, yv = np.meshgrid(np.arange(w), np.arange(h))
+        camera_coords = np.column_stack([xv.ravel(), yv.ravel()])
+
+        # Find corresponding screen coordinates
+        screen_coords = self.map_camera_points_to_screen_points(camera_coords)
+        map_x = screen_coords[:, 0].reshape(h, w).astype(np.float32)
+        map_y = screen_coords[:, 1].reshape(h, w).astype(np.float32)
+        warped = cv2.remap(screen_image, map_x, map_y, interpolation=cv2.INTER_LINEAR,
+                           borderMode=cv2.BORDER_CONSTANT)
+        return warped
+
+
     def calculate_accuracy(self, expected_screen_points, mapped_screen_points):
         """
         Calculate mapping accuracy by measuring distances between mapped points and expected screen points.
