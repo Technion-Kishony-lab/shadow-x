@@ -8,7 +8,6 @@ def group_argmax_sorted(indices, vals):
     """
     # Identify where groups start and end
     unique_idx, start = np.unique(indices, return_index=True)
-    end = np.r_[start[1:], len(indices)]
 
     # Compute max per group (vectorized)
     max_vals = np.maximum.reduceat(vals, start)
@@ -62,7 +61,7 @@ def cyclic_true_center_last_axis(a):
 
 @pytest.mark.parametrize("arr, expected", [
     (np.array([0, 0, 1, 1, 1, 0, 0, 0]), 3),
-    (np.array([[1, 1, 1, 0, 0],[1, 1, 0, 0, 1],[1, 0, 0, 1, 1]]), np.array([1, 0, 4])),
+    (np.array([[1, 1, 1, 0, 0], [1, 1, 0, 0, 1], [1, 0, 0, 1, 1]]), np.array([1, 0, 4])),
     (np.array([[0, 0, 1, 1, 1, 0, 0, 0], [0, 0, 1, 1, 1, 0, 0, 0], [0, 0, 1, 1, 1, 0, 0, 0]]), np.array([3, 3, 3])),
     (np.array([[1, 1, 0, 1, 0, 0, 1], [0, 0, 1, 1, 1, 0, 0]]), np.array([0, 3])),
     (np.array([[0, 0, 0, 0], [0, 1, 0, 0]]), np.array([-1, 1])),

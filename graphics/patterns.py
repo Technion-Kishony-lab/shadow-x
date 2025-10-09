@@ -2,7 +2,7 @@ import numpy as np
 
 
 def get_grid_circles_image(size, num_rows, radius_frac=0.25, margin_frac=0.25,
-                               background_color=(0, 0, 0), circle_color=(255, 255, 255)):
+                           background_color=(0, 0, 0), circle_color=(255, 255, 255)):
     d = size[0] / (num_rows - 1 + (margin_frac + radius_frac) * 2)
     radius = int(radius_frac * d)
     margin = int((margin_frac + radius_frac) * d)

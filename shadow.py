@@ -96,4 +96,4 @@ def run_options():
 
 if __name__ == "__main__":
     ShadowRunner(show_camera=False, show_detection=False,
-                 iterations=5000, save_mapping=None, load_mapping=None).run()
+                 iterations=5000, save_mapping=None, load_mapping=False).run()

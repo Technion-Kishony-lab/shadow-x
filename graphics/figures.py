@@ -78,10 +78,9 @@ def set_figure_position(fig, screen=0, position="full"):
         # As a workaround, we will ask the use to place the window manually.
         plt.pause(0.1)  # allow time for the window to appear
         print("Warning: Setting figure position is not supported on macOS with the default backend. "
-                "Please move the window manually.")
+              "Please move the window manually.")
         wait_for_keypress(fig, options=('enter',))
         return
-
 
     # --- WXAgg backend ---
     if "wxagg" in backend:

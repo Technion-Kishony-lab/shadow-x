@@ -155,7 +155,8 @@ class CameraScreenRunner(Runner):
     @collect_refresh
     def maybe_show_camera(self, frame):
         if self.show_camera:
-            return self.get_camera_display().update_image(frame, self.use_blitting, refresh_now=not self.refresh_together)
+            return self.get_camera_display().update_image(frame, self.use_blitting,
+                                                          refresh_now=not self.refresh_together)
 
 
 class MappingRunner(CameraScreenRunner):

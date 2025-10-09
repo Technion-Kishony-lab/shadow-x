@@ -131,7 +131,7 @@ class StripesAnalyzer:
         dark_cycle_index = self.get_dark_cycle_index()
         frame_indices = np.arange(self.num_images)[None, None, :]
         num_iters_from_darkest = (dark_cycle_index[:, :, None] - frame_indices + self.num_images // 2) \
-                                 % self.num_images - self.num_images // 2
+            % self.num_images - self.num_images // 2
         num_dark_iters = self.dark_width / (self.light_width + self.dark_width) * self.num_images
         norm_dist_in_dark = num_iters_from_darkest / (num_dark_iters * 0.5)
         weights = np.exp(-(norm_dist_in_dark * sigma) ** 2)
@@ -166,6 +166,7 @@ def main():
     img = create_camera_figure(2).set_image(avg_grey, allow_resize=True)
     img.set_clim(0, 160)
     plt.show()
+
 
 if __name__ == "__main__":
     main()

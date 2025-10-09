@@ -48,7 +48,6 @@ class Mapping:
                            borderMode=cv2.BORDER_CONSTANT)
         return warped
 
-
     def calculate_accuracy(self, expected_screen_points, mapped_screen_points):
         """
         Calculate mapping accuracy by measuring distances between mapped points and expected screen points.

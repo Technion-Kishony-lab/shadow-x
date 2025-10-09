@@ -6,7 +6,7 @@ from resources.camera import Camera
 from graphics.image_figure import ImageFigure
 from graphics.helpers import subtract_images, wait_for_keypress, set_matplotlib_backend
 from graphics.patterns import get_grid_circles_image
-from mapping.mapping import HomographyMapping, Mapping
+from mapping import HomographyMapping, Mapping
 from resources.camera_and_screens import (get_overhead_camera, get_or_create_backlight_screen,
                                           create_camera_figure)
 
@@ -63,11 +63,13 @@ def register_screen_camera(camera: Camera, backlight_screen: ImageFigure, camera
         camera_display.set_image(diff_image)
         disp_ax = camera_display.ax
         if centers_on_camera is None:
-            camera_display.set_text("Pattern NOT detected. Press Enter to break, or adjust setup and press Space to retry.")
+            camera_display.set_text("Pattern NOT detected. Press Enter to break, "
+                                    "or adjust setup and press Space to retry.")
         else:
             # plot the detected circles on the camera image:
             disp_ax.plot(centers_on_camera[:, 0], centers_on_camera[:, 1], 'rx', markersize=7)
-            camera_display.set_text("Pattern detected. Press Enter to confirm, or adjust setup and press Space to try again.")
+            camera_display.set_text("Pattern detected. Press Enter to confirm, "
+                                    "or adjust setup and press Space to try again.")
 
             # map the detected circles to screen coordinates:
             screen_points = mapping.map_camera_points_to_screen_points(centers_on_camera)
