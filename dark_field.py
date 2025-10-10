@@ -90,18 +90,41 @@ class StripeRunner(CameraScreenRunner):
         return get_stripes_image(light_width=self.light_width, dark_width=self.dark_width, phase=phase, size=size,
                                  stripes_color=self.STRIPES_COLOR, background_color=self.BACKGROUND_COLOR)
 
-    def run(self):
-        super().run()
-        return self.images
+    def take_uniform_image(self, color):
+        self.backlight_screen.illuminate(color=color, pause=ILLUMINATION_PAUSE)
+        image = self.take_picture()
+        self.maybe_show_camera(image)
+        return image
 
-    def take_bright_and_dark_images(self):
-        images = []
-        for color in [self.BACKGROUND_COLOR, (0, 0, 0)]:
-            self.backlight_screen.illuminate(color=color, pause=ILLUMINATION_PAUSE)
-            image = self.take_picture()
-            self.maybe_show_camera(image)
-            images.append(image)
-        return images
+    def _after_run(self):
+        self.dark_image = self.take_uniform_image(color=self.BACKGROUND_COLOR)
+        self.bright_image = self.take_uniform_image(color=self.STRIPES_COLOR)
+        super()._after_run()
+
+    def save_to_pickle(self, filepath):
+        import pickle
+        data = {
+            'images': np.array(self.images),
+            'dark_image': self.dark_image,
+            'bright_image': self.bright_image,
+            'light_width': self.light_width,
+            'dark_width': self.dark_width,
+        }
+        with open(filepath, 'wb') as f:
+            pickle.dump(data, f)
+
+    @classmethod
+    def load_from_pickle(cls, filepath):
+        import pickle
+        with open(filepath, 'rb') as f:
+            data = pickle.load(f)
+        runner = cls(light_width=data['light_width'], dark_width=data['dark_width'],
+                     num_images=len(data['images']), num_images_to_trash=0)
+        runner.images = data['images']
+        runner.dark_image = data['dark_image']
+        runner.bright_image = data['bright_image']
+        return runner
+
 
 
 class StripesAnalyzer:
