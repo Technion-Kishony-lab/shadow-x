@@ -10,14 +10,20 @@ from runners import CameraScreenRunner
 from resources.camera_and_screens import create_camera_figure
 
 """
-Illumination pattern for stripe stitching.
+Rationale.
+We want to take an image with dark field illumination, i.e. with light coming from the side.
+This is good for detecting scattered light from small particles.
+We simulate dark field illumination by taking multiple images with a backlight screen
+illuminated with moving stripes, and then combining the images such that each pixel is averaged
+only over the images where it is in the dark part of the stripe pattern.
 
-Scheme of illumination:
 
-=== light (width = 3)
------ dark (gap = 5)
+Schematic illustration of the illumination pattern over time:
 
-                                                          iteration index
+=== light_width = 3
+----- dark_width = 5
+
+                                                          frame index
 ===-----===-----===-----===-----===-----===-----===-----  0
 ==-----===-----===-----===-----===-----===-----===-----=  1
 =-----===-----===-----===-----===-----===-----===-----==  2
@@ -26,7 +32,11 @@ Scheme of illumination:
 ---===-----===-----===-----===-----===-----===-----===--  5
 --===-----===-----===-----===-----===-----===-----===---  6
 -===-----===-----===-----===-----===-----===-----===----  7
-54321076543210765432107654321076543210765432107654321076  Center of dark iteration index
+54321076543210765432107654321076543210765432107654321076  <-- "mid-dark index"
+
+ "mid-dark"
+     |
+===-----
 
 """
 
