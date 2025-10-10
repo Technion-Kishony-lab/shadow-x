@@ -52,7 +52,11 @@ class Runner:
         with Timer("Entire run") as timer:
             for i in range(self.iterations):
                 self._run_iteration(i)
+        self._after_run()
         return timer.get_avg_time()
+
+    def _after_run(self):
+        pass
 
     @timed
     def _run_iteration(self, i):
@@ -123,6 +127,9 @@ class CameraScreenRunner(Runner):
     def _end_iteration(self, i):
         super()._end_iteration(i)
         self.refresh_all()
+
+    def _after_run(self):
+        self.backlight_screen.illuminate(color=(0, 0, 0))
 
     @timed
     def refresh_all(self):
