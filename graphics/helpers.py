@@ -1,6 +1,7 @@
 import matplotlib
 import numpy as np
 from matplotlib import pyplot as plt
+from prometheus_client.decorator import contextmanager
 
 from env import BACKEND
 
@@ -37,3 +38,13 @@ def wait_for_keypress(fig, options=('y', 'n')) -> str:
 
 def set_matplotlib_backend():
     matplotlib.use(BACKEND)
+
+
+@contextmanager
+def temp_set_no_toolbar():
+    original_toolbar = matplotlib.rcParams['toolbar']
+    matplotlib.rcParams['toolbar'] = 'none'
+    try:
+        yield
+    finally:
+        matplotlib.rcParams['toolbar'] = original_toolbar

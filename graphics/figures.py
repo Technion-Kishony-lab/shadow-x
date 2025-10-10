@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from env import SCREENS_TO_COORDS
-from graphics.helpers import wait_for_keypress
+from graphics.helpers import wait_for_keypress, temp_set_no_toolbar
 
 
 def set_figure_position(fig, screen=0, position="full"):
@@ -108,14 +108,17 @@ def set_figure_position(fig, screen=0, position="full"):
 
 def create_positioned_figure_and_axes(screen=0, figure_position="full", axes_position="full", is_image=False,
                                       remove_toolbar: bool = False):
-    fig = plt.figure()
-    set_figure_position(fig, screen=screen, position=figure_position)
-
     if remove_toolbar:
+        with temp_set_no_toolbar():
+             fig = plt.figure()
         fig.canvas.toolbar_visible = False
         fig.canvas.header_visible = False
         fig.canvas.footer_visible = False
         fig.canvas.resizable = False
+    else:
+        fig = plt.figure()
+
+    set_figure_position(fig, screen=screen, position=figure_position)
 
     is_full = isinstance(axes_position, str) and axes_position == "full"
     ax = fig.add_axes((0, 0, 1, 1) if is_full else axes_position)
