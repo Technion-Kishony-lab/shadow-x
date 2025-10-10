@@ -8,6 +8,7 @@ from graphics.helpers import subtract_images
 from graphics.image_figure import ImageFigure
 from runners import CameraScreenRunner
 from resources.camera_and_screens import create_camera_figure
+from utils.persistence import with_file_cache
 
 """
 Rationale.
@@ -101,7 +102,7 @@ class StripeRunner(CameraScreenRunner):
         self.bright_image = self.take_uniform_image(color=self.STRIPES_COLOR)
         super()._after_run()
 
-    def save_to_pickle(self, filepath):
+    def to_pickle(self, filepath):
         import pickle
         data = {
             'images': np.array(self.images),
@@ -114,7 +115,7 @@ class StripeRunner(CameraScreenRunner):
             pickle.dump(data, f)
 
     @classmethod
-    def load_from_pickle(cls, filepath):
+    def from_pickle(cls, filepath):
         import pickle
         with open(filepath, 'rb') as f:
             data = pickle.load(f)
@@ -181,8 +182,9 @@ class StripesAnalyzer:
         return avg_image_rgb.astype(np.uint8), avg_image_gray.astype(np.uint8)
 
 
+@with_file_cache('stripe_runner.pkl', 'auto')
 def run_stripes_illumination(light_width=15, dark_width=35, num_images=None,
-                            num_images_to_trash=1):
+                            num_images_to_trash=1) -> StripeRunner:
     num_images = num_images if num_images is not None else light_width + dark_width
     runner = StripeRunner(num_images=num_images, light_width=light_width, dark_width=dark_width,
                           num_images_to_trash=num_images_to_trash)
@@ -193,12 +195,7 @@ def run_stripes_illumination(light_width=15, dark_width=35, num_images=None,
 def take_stripe_illuminated_image(light_width=15, dark_width=35, num_images=None,
                                   num_images_to_trash=1,
                                   sigma=0.1, max_sigma=0.8):
-    if True:
-        runner = run_stripes_illumination(light_width, dark_width, num_images, num_images_to_trash)
-        runner.save_to_pickle('stripe_runner.pkl')
-    else:
-        runner = StripeRunner.load_from_pickle('stripe_runner.pkl')
-
+    runner = run_stripes_illumination(light_width, dark_width, num_images, num_images_to_trash)
     analyzer = StripesAnalyzer.from_stripe_runner(runner)
     return analyzer.get_average_image(sigma=sigma, max_sigma=max_sigma), analyzer
 
