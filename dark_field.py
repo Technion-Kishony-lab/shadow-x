@@ -181,22 +181,33 @@ class StripesAnalyzer:
         return avg_image_rgb.astype(np.uint8), avg_image_gray.astype(np.uint8)
 
 
-def take_stripe_illuminated_image(light_width=15, dark_width=35, num_images=None,
-                                  num_images_to_trash=1,
-                                  sigma=0.1, max_sigma=0.8):
+def run_stripes_illumination(light_width=15, dark_width=35, num_images=None,
+                            num_images_to_trash=1):
     num_images = num_images if num_images is not None else light_width + dark_width
     runner = StripeRunner(num_images=num_images, light_width=light_width, dark_width=dark_width,
                           num_images_to_trash=num_images_to_trash)
     runner.run()
+    return runner
+
+
+def take_stripe_illuminated_image(light_width=15, dark_width=35, num_images=None,
+                                  num_images_to_trash=1,
+                                  sigma=0.1, max_sigma=0.8):
+    if True:
+        runner = run_stripes_illumination(light_width, dark_width, num_images, num_images_to_trash)
+        runner.save_to_pickle('stripe_runner.pkl')
+    else:
+        runner = StripeRunner.load_from_pickle('stripe_runner.pkl')
+
     analyzer = StripesAnalyzer.from_stripe_runner(runner)
     return analyzer.get_average_image(sigma=sigma, max_sigma=max_sigma), analyzer
 
 
 def main():
-    (avg_rgb, avg_grey), analyzer = take_stripe_illuminated_image(
+    (avg_rgb, avg_gray), analyzer = take_stripe_illuminated_image(
         light_width=10, dark_width=31, num_images=None, sigma=0.3, max_sigma=0.6, num_images_to_trash=11)
     img = create_camera_figure(1).set_image(avg_rgb, allow_resize=True)
-    img = create_camera_figure(2).set_image(avg_grey, allow_resize=True)
+    img = create_camera_figure(2).set_image(avg_gray, allow_resize=True)
     img.set_clim(0, 160)
     plt.show()
 
