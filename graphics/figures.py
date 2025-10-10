@@ -110,7 +110,7 @@ def create_positioned_figure_and_axes(screen=0, figure_position="full", axes_pos
                                       remove_toolbar: bool = False):
     if remove_toolbar:
         with temp_set_no_toolbar():
-             fig = plt.figure()
+            fig = plt.figure()
         fig.canvas.toolbar_visible = False
         fig.canvas.header_visible = False
         fig.canvas.footer_visible = False

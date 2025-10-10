@@ -4,7 +4,6 @@ import pickle
 from typing import get_type_hints
 
 
-# ---------- helpers ----------
 def save_result(obj, filepath, save_fn=None):
     if save_fn:
         return save_fn(obj, filepath)
@@ -14,6 +13,7 @@ def save_result(obj, filepath, save_fn=None):
         return obj.save(filepath)
     with open(filepath, "wb") as f:
         pickle.dump(obj, f)
+
 
 def load_result(filepath, load_fn=None, expected_type=None):
     if load_fn:
@@ -25,7 +25,7 @@ def load_result(filepath, load_fn=None, expected_type=None):
     with open(filepath, "rb") as f:
         return pickle.load(f)
 
-# ---------- decorator ----------
+
 def with_file_cache(
         default_filepath=None,
         default_mode="calculate",
@@ -33,6 +33,7 @@ def with_file_cache(
         save_fnc=None, load_fnc=None
         ):
     """
+    Decorator to cache function results to/from a file.
     kwargs:
       - filepath: str (required for load/save)
       - mode: {"calculate","save","load","auto"}

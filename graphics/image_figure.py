@@ -26,13 +26,20 @@ class ImageFigure:
     def image_array(self):
         return self.image.get_array() if self.image is not None else None
 
-    def set_image(self, arr: np.ndarray, pause=0, draw=True, allow_resize=False):
+    def set_image(self, arr: np.ndarray, pause=0, draw=True, allow_resize=False,
+                  cmap=None, clim=None):
         if self.image is not None:
             if not allow_resize:
                 assert np.all(self.image_array.shape[:2] == arr.shape[:2])
             self.image.set_array(arr)
+            if cmap is not None:
+                self.image.set_cmap(cmap)
+            if clim is not None:
+                self.image.set_clim(*clim)
         else:
-            self.image = self.ax.imshow(arr, cmap='gray', vmin=0, vmax=255)
+            cmap = cmap or 'gray' if arr.ndim == 2 else None
+            clim = clim or (0, 255) if arr.dtype == np.uint8 else None
+            self.image = self.ax.imshow(arr, cmap=cmap, vmin=clim[0], vmax=clim[1], zorder=0)
         if draw:
             self.canvas.draw()
         if pause:

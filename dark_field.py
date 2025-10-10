@@ -37,7 +37,7 @@ Schematic illustration.
 -===-----===-----===-----===-----===-----===-----===----  7
 54321076543210765432107654321076543210765432107654321076  <-- "mid-dark index"
 
- 
+
      V "mid-dark"
 ===-----
 
@@ -223,7 +223,7 @@ class StripesAnalyzer:
         """
         image_indices = np.arange(self.num_images)[None, None, :]
         num_frames_from_darkest = (mid_dark_index[:, :, None] - image_indices + self.num_images // 2) \
-                                  % self.num_images - self.num_images // 2
+            % self.num_images - self.num_images // 2
         num_frames_in_dark_phase = self.dark_width / (self.light_width + self.dark_width) * self.num_images
         phase_in_dark = num_frames_from_darkest / (num_frames_in_dark_phase * 0.5)  # -1 to 1 in dark phase
         weights = np.exp(-(phase_in_dark / dark_dist) ** 2)
@@ -257,16 +257,16 @@ def run_stripes_illumination(light_width=15, dark_width=35, num_images=None,
 
 
 def take_pseudo_darkfield_image(light_width=15, dark_width=35, num_images=None,
-                                  num_images_to_discard=1,
-                                  sigma=0.4, max_sigma=0.8,
-                                  smoothing=None,
-                                  substract_background=True,
-                                  normalize=True,
-                                  ):
+                                num_images_to_discard=1,
+                                sigma=0.4, max_sigma=0.8,
+                                smoothing=None,
+                                substract_background=True,
+                                normalize=True,
+                                ):
     runner = run_stripes_illumination(light_width, dark_width, num_images, num_images_to_discard)
     analyzer = StripesAnalyzer.from_stripe_runner(runner)
     rgb, gray = analyzer.get_pseudo_darkfield_image(dark_dist=sigma, max_dark_dist=max_sigma, smoothing=smoothing,
-                                               substract_background=substract_background, normalize=normalize)
+                                                    substract_background=substract_background, normalize=normalize)
     return rgb, gray, analyzer
 
 
