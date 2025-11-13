@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from prometheus_client.decorator import contextmanager
 
-from env import BACKEND
+from env_loader import BACKEND
 
 
 def subtract_images(image1, image2, as_gray=False, as_uint8=False):

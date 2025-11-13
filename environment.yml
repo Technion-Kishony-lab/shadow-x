@@ -1,0 +1,38 @@
+# Macroscope Conda Environment Configuration
+# This file documents all dependencies for both NewMacroscope and shadow-x projects.
+# Update your environment with: conda env update -f environment.yml
+# Note: Some packages (like sounddevice) may need to be installed via pip if not available in conda channels.
+
+name: macroscope
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.8
+  # =============================================================================
+  # CORE DEPENDENCIES (Shared between NewMacroscope and shadow-x)
+  # =============================================================================
+  - numpy
+  - opencv
+  - matplotlib
+  - scipy
+  - pytest
+  # =============================================================================
+  # NewMacroscope Dependencies
+  # =============================================================================
+  - pip
+  - pip:
+    # Camera Controller (Canon EOS via digiCamControl)
+    - requests>=2.28.0
+    # LED Light Controller (MCC USB Switch Controller)
+    - mcculw>=1.0.0
+    # Filter Wheel Controller (StarlightXpress USB HID)
+    - hidapi>=0.14.0
+    # Optional USB Device Scanning
+    - pyserial>=3.5
+    - WMI>=1.5.1; sys_platform == "win32"
+    # =============================================================================
+    # shadow-x Dependencies
+    # =============================================================================
+    - prometheus-client>=0.12.0
+    - sounddevice>=0.4.0  # Note: Install via pip if conda env update doesn't install it

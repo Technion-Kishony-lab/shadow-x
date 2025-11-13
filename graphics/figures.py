@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from env import SCREENS_TO_COORDS
+from env_loader import SCREENS_TO_COORDS
 from graphics.helpers import wait_for_keypress, temp_set_no_toolbar
 
 
@@ -40,7 +40,7 @@ def set_figure_position(fig, screen=0, position="full"):
         geometry = screens[screen].geometry()
         window = manager.window
         if is_full:
-            window.setGeometry(geometry)
+            window.setGeometry(geometry.x(), geometry.y(), geometry.width(), geometry.height())
             window.showFullScreen()
         elif position is None:
             window.show()

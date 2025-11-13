@@ -37,4 +37,36 @@ Example of a plastic bag taken in normal bright-field illumination and synthetic
 Run:
 [dark_field.py](dark_field.py)
 
+## Macroscope Environment
+
+This repository has been adapted to support macroscope environments. The project uses the same `macroscope` conda environment as NewMacroscope.
+
+**Note:** This branch (`macroscope-adaptation`) defaults to the macroscope environment configuration. No environment variable needed!
+
+### Quick Start
+
+1. Activate your macroscope conda environment:
+   ```powershell
+   conda activate macroscope
+   ```
+
+2. Update environment with dependencies (if needed):
+   ```powershell
+   conda env update -f environment.yml
+   ```
+   See `environment.yml` for the complete dependency list.
+
+3. Configure your macroscope settings in `env_macroscope.py` (camera index, screen coordinates, etc.)
+
+4. Run the scripts:
+   ```powershell
+   python shadow.py
+   python dark_field.py
+   ```
+
+5. (Optional) To switch back to shadow-x environment:
+   ```powershell
+   $env:SHADOW_X_ENV = "shadow-x"
+   ```
+
 

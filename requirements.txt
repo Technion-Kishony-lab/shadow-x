@@ -1,0 +1,29 @@
+# Requirements for shadow-x project
+# 
+# NOTE: This project uses the same 'macroscope' conda environment as NewMacroscope.
+# The environment.yml file is the recommended way to manage dependencies.
+# Use: conda env update -f environment.yml
+#
+# This requirements.txt is provided for reference only.
+
+# =============================================================================
+# CORE DEPENDENCIES (Shared with NewMacroscope)
+# =============================================================================
+numpy>=1.20.0
+opencv-python>=4.5.0
+matplotlib>=3.3.0
+scipy>=1.7.0
+sounddevice>=0.4.0
+pytest>=6.0.0
+
+# =============================================================================
+# shadow-x SPECIFIC DEPENDENCIES
+# =============================================================================
+prometheus-client>=0.12.0
+
+# =============================================================================
+# OPTIONAL DEPENDENCIES
+# =============================================================================
+# For Qt backends (if using qtagg backend)
+# PyQt5 or PySide6
+
