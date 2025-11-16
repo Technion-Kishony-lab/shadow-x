@@ -130,6 +130,12 @@ class CameraScreenRunner(Runner):
 
     def _after_run(self):
         self.backlight_screen.illuminate(color=(0, 0, 0))
+        # Release camera resources
+        if hasattr(self.camera, 'release'):
+            try:
+                self.camera.release()
+            except Exception as e:
+                print(f"Warning: Error releasing camera: {e}")
 
     @timed
     def refresh_all(self):

@@ -37,6 +37,24 @@ Example of a plastic bag taken in normal bright-field illumination and synthetic
 Run:
 [dark_field.py](dark_field.py)
 
+### Fluorescence imaging (Experimental)
+
+Experimental fluorescence imaging using colored screen illumination as excitation light source.
+
+**Requirements:** Emission filter on camera (critical!), bright fluorophores, dark environment.
+
+#### Simple Fluorescence
+```bash
+python quick_fluorescence_test.py
+```
+Edit `EXCITATION_RGB` in the file to change excitation color (e.g., `(0, 0, 255)` for blue/GFP).
+
+#### Fluorescence Darkfield (colored stripes)
+```bash
+python quick_fluorescence_darkfield_test.py
+```
+Edit `STRIPE_COLOR` in the file. Uses colored moving stripes - combines darkfield with fluorescence excitation.
+
 ## Macroscope Environment
 
 This repository has been adapted to support macroscope environments. The project uses the same `macroscope` conda environment as NewMacroscope.

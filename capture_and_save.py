@@ -25,8 +25,8 @@ def create_output_filename(base_name, suffix=""):
     """Create timestamped filename"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     if suffix:
-        return f"{base_name}_{timestamp}_{suffix}.jpg"
-    return f"{base_name}_{timestamp}.jpg"
+        return f"{timestamp}_{base_name}_{suffix}.jpg"
+    return f"{timestamp}_{base_name}.jpg"
 
 
 def capture_brightfield_image(output_dir="output"):
